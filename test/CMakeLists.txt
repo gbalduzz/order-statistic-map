@@ -18,4 +18,5 @@ if(BUILD_PERFORMANCE_TEST)
     endfunction()
 
 ramlib_add_perftest(random_access_map_perftest)
+ramlib_add_perftest(sampling_map_perftest)
 endif()

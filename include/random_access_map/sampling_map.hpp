@@ -342,6 +342,12 @@ auto SamplingMap<Key, Value, Weight, chunk_size>::sample(Rng& rng) noexcept -> i
       node = node->left;
     }
     else {  // go right
+      if constexpr (std::is_floating_point_v<Weight>) {
+        if (!node->right) {  // Due to numerical issues the sample could be right at the edge of the interval.
+          return iterator(node);
+        }
+      }
+
       on_the_left = new_on_the_left + node->weight;
       node = node->right;
     }
