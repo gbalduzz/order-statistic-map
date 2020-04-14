@@ -135,3 +135,14 @@ TEST(RandomAccessMapTest, Assignment) {
   ramlib::RandomAccessMap<int, double> map4(map3.linearize());
   EXPECT_EQ(map4.linearize(), map3.linearize());
 }
+
+TEST(RandomAccessMapTest, IteratorValidity) {
+  ramlib::RandomAccessMap<int, int> map{{1, 1}, {0, 0}, {3, 3}, {2, 2}, {4, 4}};
+
+  auto it = map.findByKey(4);
+
+  map.erase(3);
+
+  EXPECT_EQ(it, map.findByKey(4));
+  EXPECT_EQ(4, it->second);
+}

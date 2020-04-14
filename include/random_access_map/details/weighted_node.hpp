@@ -24,6 +24,7 @@ struct WeightedNode {
       : parent(p), weight(w), subtree_weight(w), data(k, v) {}
 
   void updateSubtreeWeight();
+  void swapMetadata(WeightedNode& rhs) {}
 
   WeightedNode* left = nullptr;
   WeightedNode* right = nullptr;

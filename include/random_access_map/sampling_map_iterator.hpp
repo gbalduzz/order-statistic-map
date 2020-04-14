@@ -22,7 +22,7 @@ public:
   using Weight = typename Node::Weight;
   using Base::node_;
 
-  SamplingMapIterator(std::conditional_t<is_const, const Node*, Node*> node) : Base(node) {}
+  SamplingMapIterator(std::conditional_t<is_const, const Node*, Node*> node = nullptr) : Base(node) {}
 
   template <bool other_c>
   SamplingMapIterator(const SamplingMapIterator<Node, other_c>& rhs) : Base(rhs) {}

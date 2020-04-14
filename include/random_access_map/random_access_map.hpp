@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "map_iterator.hpp"
+#include "details/compare.hpp"
 #include "details/fixed_size_allocator.hpp"
 #include "details/node.hpp"
 #include "details/node_operations.hpp"
@@ -94,6 +95,7 @@ public:
 
   // For testing purposes.
   bool checkConsistency() const noexcept;
+  bool checkSize() const noexcept;
 
 private:
   constexpr static auto BLACK = details::BLACK;
@@ -180,7 +182,9 @@ auto RandomAccessMap<Key, Value, chunk_size>::insert(const Key& key, const Value
   bool done = false;
 
   while (!done) {
-    if (key == get_key(node)) {  // Key is already present. Undo changes and return.
+    const int comp = details::compare(key, get_key(node));
+
+    if (comp == 0) {  // Key is already present. Undo changes and return.
       node->data.second = val;
       iterator return_it = iterator(node);
 
@@ -194,7 +198,7 @@ auto RandomAccessMap<Key, Value, chunk_size>::insert(const Key& key, const Value
     }
     ++node->subtree_size;
 
-    if (key < get_key(node)) {
+    if (comp < 0) {
       if (node->left == nullptr) {
         node->left = allocator_.create(key, val, node);
         done = true;
@@ -227,14 +231,14 @@ bool RandomAccessMap<Key, Value, chunk_size>::erase(const Key& key) noexcept {
   bool found = false;
 
   while (true) {
-    if (key == get_key(to_delete)) {
+    --to_delete->subtree_size;
+    const int comp = details::compare(key, get_key(to_delete));
+
+    if (comp == 0) {
       found = true;
       break;
     }
-
-    --to_delete->subtree_size;
-
-    if (key < get_key(to_delete)) {
+    else if (comp < 0) {
       if (!to_delete->left)
         break;
       to_delete = to_delete->left;
@@ -257,18 +261,17 @@ bool RandomAccessMap<Key, Value, chunk_size>::erase(const Key& key) noexcept {
   }
 
   if (to_delete->left != nullptr && to_delete->right != nullptr) {  // to_delete has two children.
-    Node* const original = to_delete;
-    --to_delete->subtree_size;
+    Node* original = to_delete;
     to_delete = to_delete->right;
+    --to_delete->subtree_size;
     while (to_delete->left) {
-      --to_delete->subtree_size;
       to_delete = to_delete->left;
+      --to_delete->subtree_size;
     }
 
-    original->data = std::move(to_delete->data);
+    swap(original, to_delete, root_);
+    to_delete = original;
   }
-
-  --to_delete->subtree_size;
 
   details::removeNoDoubleChild(to_delete, root_);
   allocator_.destroy(to_delete);
@@ -287,7 +290,8 @@ void RandomAccessMap<Key, Value, chunk_size>::erase(iterator it) {
       to_delete = to_delete->left;
     }
 
-    original->data = std::move(to_delete->data);
+    swap(original, to_delete, root_);
+    to_delete = original;
   }
 
   // Update subtree counts.
@@ -339,9 +343,10 @@ template <class Key, class Value, std::size_t chunk_size>
 auto RandomAccessMap<Key, Value, chunk_size>::findByKey(const Key& key) noexcept -> iterator {
   Node* node = root_;
   while (node) {
-    if (get_key(node) == key)
+    const int comp = details::compare(key, get_key(node));
+    if (comp == 0)
       return iterator(node);
-    else if (key < get_key(node))
+    else if (comp < 0)
       node = node->left;
     else
       node = node->right;
@@ -361,13 +366,28 @@ auto RandomAccessMap<Key, Value, chunk_size>::findByKey(const Key& key) const no
 template <class Key, class Value, std::size_t chunk_size>
 bool RandomAccessMap<Key, Value, chunk_size>::contains(const Key& key) const noexcept {
   const Node* node = root_;
-  while (node) {
-    if (get_key(node) == key)
-      return true;
-    else if (key < get_key(node))
-      node = node->left;
-    else
-      node = node->right;
+
+  if constexpr (std::is_same_v<Key, std::string>) {
+    while (node) {
+      const int comp = details::compare(key, get_key(node));
+      if (comp < 0)
+        node = node->left;
+      else if (comp == 0)
+        return true;
+      else
+        node = node->right;
+    }
+  }
+
+  else {  // Overhead of intermediate result can be significant in this small function.
+    while (node) {
+      if (get_key(node) == key)
+        return true;
+      else if (key < get_key(node))
+        node = node->left;
+      else
+        node = node->right;
+    }
   }
 
   return false;

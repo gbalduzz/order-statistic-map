@@ -21,6 +21,7 @@
 #include <tuple>
 
 #include "sampling_map_iterator.hpp"
+#include "details/compare.hpp"
 #include "details/fixed_size_allocator.hpp"
 #include "details/node_operations.hpp"
 #include "details/weighted_node.hpp"
@@ -189,7 +190,9 @@ auto SamplingMap<Key, Value, Weight, chunk_size>::insert(const Key& key, const V
   bool done = false;
 
   while (!done) {
-    if (key == get_key(node)) {  // Key is already present. Undo changes and return.
+    const int comp = details::compare(key, get_key(node));
+
+    if (comp == 0) {  // Key is already present. Undo changes and return.
       node->data.second = val;
       iterator return_it = iterator(node);
 
@@ -203,7 +206,7 @@ auto SamplingMap<Key, Value, Weight, chunk_size>::insert(const Key& key, const V
     }
     node->subtree_weight += weight;
 
-    if (key < get_key(node)) {
+    if (comp < 0) {
       if (node->left == nullptr) {
         node->left = allocator_.create(key, val, weight, node);
         done = true;
@@ -237,12 +240,14 @@ bool SamplingMap<Key, Value, Weight, chunk_size>::erase(const Key& key) noexcept
   bool found = false;
 
   while (true) {
-    if (key == get_key(to_delete)) {
+    const int comp = details::compare(key, get_key(to_delete));
+
+    if (comp == 0) {
       found = true;
       break;
     }
 
-    if (key < get_key(to_delete)) {
+    if (comp < 0) {
       if (!to_delete->left)
         break;
       to_delete = to_delete->left;
@@ -268,37 +273,32 @@ void SamplingMap<Key, Value, Weight, chunk_size>::erase(const iterator it) {
   Node* to_delete = it.node_;
 
   // Update upstream weights
-  Node* const original = to_delete;
-  const Weight w_original = original->weight;
+  Node* original = to_delete;
   bool double_children = false;
 
   if (to_delete->left != nullptr && to_delete->right != nullptr) {  // to_delete has two children.
     double_children = true;
-    Node* const original = to_delete;
     to_delete = to_delete->right;
     while (to_delete->left) {
       to_delete = to_delete->left;
     }
   }
 
-  const Weight w = to_delete->weight;
+  if (double_children) {  // Update original and downstream.
+    const Weight moved_w = to_delete->weight;
 
-  // Update upstream weight.
-  Node* ancestor = original;
-  while (ancestor) {
-    ancestor->subtree_weight -= w_original;
-    ancestor = ancestor->parent;
+    original->weight = 0;
+
+    swap(original, to_delete, root_);
+    std::swap(to_delete, original);
   }
 
-  if (double_children) {  // Update original and downstream.
-    original->data = std::move(to_delete->data);
-    original->weight = to_delete->weight;
-
-    Node* ancestor = to_delete;
-    while (ancestor != original) {
-      ancestor->subtree_weight -= w;
-      ancestor = ancestor->parent;
-    }
+  // TODO: slightly optimize weight update.
+  to_delete->weight = 0;
+  Node* ancestor = to_delete;
+  while (ancestor) {
+    ancestor->updateSubtreeWeight();
+    ancestor = ancestor->parent;
   }
 
   removeNoDoubleChild(to_delete, root_);
@@ -312,16 +312,18 @@ void SamplingMap<Key, Value, Weight, chunk_size>::erase(const iterator it) {
 template <class Key, class Value, class Weight, std::size_t chunk_size>
 template <class Rng>
 auto SamplingMap<Key, Value, Weight, chunk_size>::sample(Rng& rng) noexcept -> iterator {
-  if (!root_)
+  const Weight total_weight = totalWeight();
+  if (!total_weight)
     return iterator(nullptr);
 
   Weight scaled;
-  const Weight total_weight = root_->subtree_weight;
 
   if constexpr (std::is_floating_point_v<Weight>) {
+    assert(total_weight >= 0);
     scaled = std::uniform_real_distribution<Weight>(0, total_weight)(rng);
   }
   else {  // is integer
+    static_assert(std::is_integral_v<Weight>, "Weight needs to be floating or integer.");
     scaled = std::uniform_int_distribution<Weight>(0, total_weight - 1)(rng);
   }
 
@@ -342,6 +344,12 @@ auto SamplingMap<Key, Value, Weight, chunk_size>::sample(Rng& rng) noexcept -> i
       node = node->left;
     }
     else {  // go right
+      if constexpr (std::is_floating_point_v<Weight>) {
+        if (!node->right) {  // Due to numerical issues the sample could be right at the edge of the interval.
+          return iterator(node);
+        }
+      }
+
       on_the_left = new_on_the_left + node->weight;
       node = node->right;
     }
@@ -358,9 +366,11 @@ template <class Key, class Value, class Weight, std::size_t chunk_size>
 auto SamplingMap<Key, Value, Weight, chunk_size>::findByKey(const Key& key) noexcept -> iterator {
   Node* node = root_;
   while (node) {
-    if (get_key(node) == key)
+    const int comp = details::compare(key, get_key(node));
+
+    if (comp == 0)
       return iterator(node);
-    else if (key < get_key(node))
+    else if (comp < 0)
       node = node->left;
     else
       node = node->right;
@@ -379,17 +389,7 @@ auto SamplingMap<Key, Value, Weight, chunk_size>::findByKey(const Key& key) cons
 
 template <class Key, class Value, class Weight, std::size_t chunk_size>
 bool SamplingMap<Key, Value, Weight, chunk_size>::contains(const Key& key) const noexcept {
-  const Node* node = root_;
-  while (node) {
-    if (get_key(node) == key)
-      return true;
-    else if (key < get_key(node))
-      node = node->left;
-    else
-      node = node->right;
-  }
-
-  return false;
+  return static_cast<bool>(findByKey(key));
 }
 
 template <class Key, class Value, class Weight, std::size_t chunk_size>

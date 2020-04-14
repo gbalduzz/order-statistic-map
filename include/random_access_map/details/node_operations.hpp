@@ -278,5 +278,59 @@ void removeNoDoubleChild(Node* to_delete, Node*& root) noexcept {
   }
 }
 
+template <class Node>
+void reconnect(Node* node, Node* old_pos) {
+  if (node->parent && node->parent->left == old_pos)
+    node->parent->left = node;
+  else if (node->parent && node->parent->right == old_pos)
+    node->parent->right = node;
+
+  if (node->right)
+    node->right->parent = node;
+  if (node->left)
+    node->left->parent = node;
+}
+
+template <class Node>
+void swapParentChild(Node* p, Node* c) {
+  if (isLeftChild(c)) {
+    std::swap(c->right, p->right);
+    p->left = c->left;
+    c->left = p;
+  }
+  else {
+    std::swap(c->left, p->left);
+    p->right = c->right;
+    c->right = p;
+  }
+
+  c->parent = p->parent;
+  p->parent = c;
+}
+template <class Node>
+void swap(Node* a, Node* b, Node*& root) {
+  if (root == a)
+    root = b;
+
+  if (b->parent == a) {
+    swapParentChild(a, b);
+  }
+  else {
+    // Swap pointers
+    std::swap(a->left, b->left);
+    std::swap(a->right, b->right);
+    std::swap(a->parent, b->parent);
+  }
+
+  reconnect(a, b);
+  reconnect(b, a);
+
+  assert(a->parent != a);
+  assert(b->parent != b);
+
+  a->swapMetadata(*b);
+  std::swap(a->color, b->color);
+}
+
 }  // namespace details
 }  // namespace ramlib
