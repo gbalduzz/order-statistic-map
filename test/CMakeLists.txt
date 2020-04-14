@@ -6,6 +6,7 @@ endfunction()
 
 ramlib_add_test(random_access_map_test)
 ramlib_add_test(random_access_set_test)
+ramlib_add_test(sampling_map_test)
 
 option(BUILD_PERFORMANCE_TEST "Build performance test. Requires google benchmark library." OFF)
 

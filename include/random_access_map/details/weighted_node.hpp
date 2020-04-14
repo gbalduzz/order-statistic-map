@@ -14,18 +14,21 @@
 namespace ramlib {
 namespace details {
 
-template <class _Key, class _Value>
-struct Node {
+template <class _Key, class _Value, class _Weight>
+struct WeightedNode {
   using Key = _Key;
   using Value = _Value;
+  using Weight = _Weight;
 
-  Node(const Key& k, const Value& v, Node* p) : parent(p), data(k, v) {}
+  WeightedNode(const Key& k, const Value& v, const Weight w, WeightedNode* p)
+      : parent(p), weight(w), subtree_weight(w), data(k, v) {}
 
-  Node* left = nullptr;
-  Node* right = nullptr;
-  Node* parent = nullptr;
+  WeightedNode* left = nullptr;
+  WeightedNode* right = nullptr;
+  WeightedNode* parent = nullptr;
 
-  std::size_t subtree_size = 1;
+  Weight weight;
+  Weight subtree_weight;
 
   std::pair<Key, Value> data;
 

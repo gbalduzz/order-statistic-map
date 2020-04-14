@@ -5,29 +5,27 @@
 //
 // Author: Giovanni Balduzzi (gbalduzz@itp.phys.ethz.ch)
 //
-// Bidirectional iterator for the RandomAccessMap class
+// Bidirectional iterator for the map classes.
 
 #pragma once
 
 #include <functional>
 
-#include "details/node.hpp"
-
 namespace ramlib {
 
-template <class Key, class Value, bool is_const>
-class RandomAccessMapIterator {
+template <class Node, bool is_const>
+class MapIterator {
 public:
-  using Node = details::Node<Key, Value>;
+  using Key = typename Node::Key;
+  using Value = typename Node::Value;
   template <class A, class B>
   using Conditional = std::conditional_t<is_const, A, B>;
 
-  RandomAccessMapIterator(Conditional<const Node*, Node*> node) : node_(node) {}
+  MapIterator(Conditional<const Node*, Node*> node) : node_(node) {}
 
   // Convert non-const to const
   template <bool c = is_const, typename = std::enable_if_t<c>>
-  RandomAccessMapIterator(const RandomAccessMapIterator<Key, Value, false>& rhs)
-      : node_(rhs.node_) {}
+  MapIterator(const MapIterator<Node, false>& rhs) : node_(rhs.node_) {}
 
   auto operator*() const {
     assert(node_);
@@ -53,12 +51,12 @@ public:
 
   void prev();
 
-  RandomAccessMapIterator& operator++() {
+  MapIterator& operator++() {
     next();
     return *this;
   }
 
-  RandomAccessMapIterator& operator--() {
+  MapIterator& operator--() {
     prev();
     return *this;
   }
@@ -67,26 +65,30 @@ public:
     return static_cast<bool>(node_);
   }
 
-  bool operator==(const RandomAccessMapIterator& rhs) const {
+  bool operator==(const MapIterator& rhs) const {
     return node_ == rhs.node_;
   }
-  bool operator!=(const RandomAccessMapIterator& rhs) const {
+  bool operator!=(const MapIterator& rhs) const {
     return node_ != rhs.node_;
   }
 
   // Grant access of the node to the container.
   template <class K, class V, std::size_t s>
   friend class RandomAccessMap;
+  template <class K, class V, class W, std::size_t s>
+  friend class SamplingMap;
   // Grant access to the const or non-const version.
-  template <class K, class V, bool c>
-  friend class RandomAccessMapIterator;
+  template <class N, bool c>
+  friend class MapIterator;
+  template <class N, bool c>
+  friend class SamplingMapIterator;
 
 private:
   Conditional<const Node*, Node*> node_ = nullptr;
 };
 
-template <class Key, class Value, bool is_const>
-void RandomAccessMapIterator<Key, Value, is_const>::next() {
+template <class Node, bool is_const>
+void MapIterator<Node, is_const>::next() {
   if (!node_)
     throw(std::logic_error("Advancing end iterator."));
 
@@ -104,8 +106,8 @@ void RandomAccessMapIterator<Key, Value, is_const>::next() {
   }
 }
 
-template <class Key, class Value, bool is_const>
-void RandomAccessMapIterator<Key, Value, is_const>::prev() {
+template <class Node, bool is_const>
+void MapIterator<Node, is_const>::prev() {
   if (!node_)
     throw(std::logic_error("Decrementing null iterator."));
 
