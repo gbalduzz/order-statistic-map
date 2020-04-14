@@ -21,6 +21,7 @@
 #include <tuple>
 
 #include "sampling_map_iterator.hpp"
+#include "details/compare.hpp"
 #include "details/fixed_size_allocator.hpp"
 #include "details/node_operations.hpp"
 #include "details/weighted_node.hpp"
@@ -189,7 +190,9 @@ auto SamplingMap<Key, Value, Weight, chunk_size>::insert(const Key& key, const V
   bool done = false;
 
   while (!done) {
-    if (key == get_key(node)) {  // Key is already present. Undo changes and return.
+    const int comp = details::compare(key, get_key(node));
+
+    if (comp == 0) {  // Key is already present. Undo changes and return.
       node->data.second = val;
       iterator return_it = iterator(node);
 
@@ -203,7 +206,7 @@ auto SamplingMap<Key, Value, Weight, chunk_size>::insert(const Key& key, const V
     }
     node->subtree_weight += weight;
 
-    if (key < get_key(node)) {
+    if (comp < 0) {
       if (node->left == nullptr) {
         node->left = allocator_.create(key, val, weight, node);
         done = true;
@@ -237,12 +240,14 @@ bool SamplingMap<Key, Value, Weight, chunk_size>::erase(const Key& key) noexcept
   bool found = false;
 
   while (true) {
-    if (key == get_key(to_delete)) {
+    const int comp = details::compare(key, get_key(to_delete));
+
+    if (comp == 0) {
       found = true;
       break;
     }
 
-    if (key < get_key(to_delete)) {
+    if (comp < 0) {
       if (!to_delete->left)
         break;
       to_delete = to_delete->left;
@@ -361,9 +366,11 @@ template <class Key, class Value, class Weight, std::size_t chunk_size>
 auto SamplingMap<Key, Value, Weight, chunk_size>::findByKey(const Key& key) noexcept -> iterator {
   Node* node = root_;
   while (node) {
-    if (get_key(node) == key)
+    const int comp = details::compare(key, get_key(node));
+
+    if (comp == 0)
       return iterator(node);
-    else if (key < get_key(node))
+    else if (comp < 0)
       node = node->left;
     else
       node = node->right;
@@ -382,17 +389,7 @@ auto SamplingMap<Key, Value, Weight, chunk_size>::findByKey(const Key& key) cons
 
 template <class Key, class Value, class Weight, std::size_t chunk_size>
 bool SamplingMap<Key, Value, Weight, chunk_size>::contains(const Key& key) const noexcept {
-  const Node* node = root_;
-  while (node) {
-    if (get_key(node) == key)
-      return true;
-    else if (key < get_key(node))
-      node = node->left;
-    else
-      node = node->right;
-  }
-
-  return false;
+  return static_cast<bool>(findByKey(key));
 }
 
 template <class Key, class Value, class Weight, std::size_t chunk_size>

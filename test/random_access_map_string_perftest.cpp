@@ -68,3 +68,26 @@ static void BM_MyMapInsertErase(benchmark::State& state) {
   performInsertRemoveTest<ramlib::RandomAccessMap, false>(state);
 }
 BENCHMARK(BM_MyMapInsertErase)->Arg(100)->Arg(1000)->Arg(n_init);
+
+template <template <class, class> class Map>
+static void performFindTest(benchmark::State& state) {
+  init();
+  Map<Key, Value> map;
+  for (int i = 0; i < state.range(0); ++i)
+    map.insert({keys[i], vals[i]});
+
+  for (auto _ : state) {
+    for (int i = 0; i < n_test; ++i)
+      benchmark::DoNotOptimize(map.count(keys[i]));
+  }
+}
+
+static void BM_StdMapFind(benchmark::State& state) {
+  performFindTest<std::map>(state);
+}
+BENCHMARK(BM_StdMapFind)->Arg(100)->Arg(1000)->Arg(n_init);
+
+static void BM_MyMapFind(benchmark::State& state) {
+  performFindTest<ramlib::RandomAccessMap>(state);
+}
+BENCHMARK(BM_MyMapFind)->Arg(100)->Arg(1000)->Arg(n_init);

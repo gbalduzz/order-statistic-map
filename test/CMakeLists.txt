@@ -19,6 +19,6 @@ if(BUILD_PERFORMANCE_TEST)
 
 ramlib_add_perftest(random_access_map_small_data_perftest)
 ramlib_add_perftest(random_access_map_big_data_perftest)
-ramlib_add_perftest(random_access_map_dynamic_data_perftest)
+ramlib_add_perftest(random_access_map_string_perftest)
 ramlib_add_perftest(sampling_map_perftest)
 endif()

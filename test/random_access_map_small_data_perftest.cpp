@@ -77,11 +77,10 @@ static void performFindTest(benchmark::State& state) {
   Map<Key, Value> map;
   for (int i = 0; i < state.range(0); ++i)
     map.insert({keys[i], vals[i]});
-  std::vector<std::uint8_t> findings(n_test);
 
   for (auto _ : state) {
     for (int i = 0; i < n_test; ++i)
-      findings[i] = map.count(keys[i]);
+      benchmark::DoNotOptimize(map.count(keys[i]));
   }
 }
 

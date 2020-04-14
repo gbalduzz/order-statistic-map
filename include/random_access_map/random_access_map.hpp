@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "map_iterator.hpp"
+#include "details/compare.hpp"
 #include "details/fixed_size_allocator.hpp"
 #include "details/node.hpp"
 #include "details/node_operations.hpp"
@@ -181,7 +182,9 @@ auto RandomAccessMap<Key, Value, chunk_size>::insert(const Key& key, const Value
   bool done = false;
 
   while (!done) {
-    if (key == get_key(node)) {  // Key is already present. Undo changes and return.
+    const int comp = details::compare(key, get_key(node));
+
+    if (comp == 0) {  // Key is already present. Undo changes and return.
       node->data.second = val;
       iterator return_it = iterator(node);
 
@@ -195,7 +198,7 @@ auto RandomAccessMap<Key, Value, chunk_size>::insert(const Key& key, const Value
     }
     ++node->subtree_size;
 
-    if (key < get_key(node)) {
+    if (comp < 0) {
       if (node->left == nullptr) {
         node->left = allocator_.create(key, val, node);
         done = true;
@@ -229,12 +232,13 @@ bool RandomAccessMap<Key, Value, chunk_size>::erase(const Key& key) noexcept {
 
   while (true) {
     --to_delete->subtree_size;
+    const int comp = details::compare(key, get_key(to_delete));
 
-    if (key == get_key(to_delete)) {
+    if (comp == 0) {
       found = true;
       break;
     }
-    else if (key < get_key(to_delete)) {
+    else if (comp < 0) {
       if (!to_delete->left)
         break;
       to_delete = to_delete->left;
@@ -339,9 +343,10 @@ template <class Key, class Value, std::size_t chunk_size>
 auto RandomAccessMap<Key, Value, chunk_size>::findByKey(const Key& key) noexcept -> iterator {
   Node* node = root_;
   while (node) {
-    if (get_key(node) == key)
+    const int comp = details::compare(key, get_key(node));
+    if (comp == 0)
       return iterator(node);
-    else if (key < get_key(node))
+    else if (comp < 0)
       node = node->left;
     else
       node = node->right;
@@ -361,13 +366,28 @@ auto RandomAccessMap<Key, Value, chunk_size>::findByKey(const Key& key) const no
 template <class Key, class Value, std::size_t chunk_size>
 bool RandomAccessMap<Key, Value, chunk_size>::contains(const Key& key) const noexcept {
   const Node* node = root_;
-  while (node) {
-    if (get_key(node) == key)
-      return true;
-    else if (key < get_key(node))
-      node = node->left;
-    else
-      node = node->right;
+
+  if constexpr (std::is_same_v<Key, std::string>) {
+    while (node) {
+      const int comp = details::compare(key, get_key(node));
+      if (comp < 0)
+        node = node->left;
+      else if (comp == 0)
+        return true;
+      else
+        node = node->right;
+    }
+  }
+
+  else {  // Overhead of intermediate result can be significant in this small function.
+    while (node) {
+      if (get_key(node) == key)
+        return true;
+      else if (key < get_key(node))
+        node = node->left;
+      else
+        node = node->right;
+    }
   }
 
   return false;
