@@ -22,6 +22,7 @@
 #include "map_iterator.hpp"
 #include "details/fixed_size_allocator.hpp"
 #include "details/node.hpp"
+#include "details/node_operations.hpp"
 
 namespace ramlib {
 
@@ -97,37 +98,6 @@ public:
 private:
   constexpr static auto BLACK = details::BLACK;
   constexpr static auto RED = details::RED;
-
-  void eraseImpl(Node* to_delete) noexcept;
-
-  const Key& get_key(const Node* node) const {
-    return node->data.first;
-  }
-
-  void rightRotate(Node* node);
-
-  void leftRotate(Node* node);
-
-  void fixRedRed(Node* node);
-
-  void fixDoubleBlack(Node* node);
-
-  bool isLeftChild(const Node* node) const {
-    return node->parent && node->parent->left == node;
-  }
-
-  bool isRightChild(const Node* node) const {
-    return node->parent && node->parent->right == node;
-  }
-
-  auto getUncle(const Node* node) const -> Node*;
-
-  auto getSibling(const Node* node) const -> Node*;
-
-  void updateSubtreeSize(Node* node);
-
-  // Inverts the parent-child relationship of the two arguments.
-  void moveDown(Node* node, Node* new_parent);
 
   // Members
   Node* root_ = nullptr;
@@ -241,7 +211,7 @@ auto RandomAccessMap<Key, Value, chunk_size>::insert(const Key& key, const Value
   }
 
   // Check colors
-  fixRedRed(node);
+  details::fixRedRed(node, root_);
 
   //  assert(checkConsistency());
   return {iterator(node), true};
@@ -299,7 +269,9 @@ bool RandomAccessMap<Key, Value, chunk_size>::erase(const Key& key) noexcept {
   }
 
   --to_delete->subtree_size;
-  eraseImpl(to_delete);
+
+  details::removeNoDoubleChild(to_delete, root_);
+  allocator_.destroy(to_delete);
 
   return true;
 }
@@ -318,104 +290,15 @@ void RandomAccessMap<Key, Value, chunk_size>::erase(iterator it) {
     original->data = std::move(to_delete->data);
   }
 
-  eraseImpl(to_delete);
-
   // Update subtree counts.
   Node* ancestor = to_delete->parent;
   while (ancestor) {
     --ancestor->subtree_size;
     ancestor = ancestor->parent;
   }
-}
 
-template <class Key, class Value, std::size_t chunk_size>
-void RandomAccessMap<Key, Value, chunk_size>::eraseImpl(Node* to_delete) noexcept {
-  Node* replacement = to_delete->left ? to_delete->left : to_delete->right;
-
-  auto color = [](const Node* n) { return n ? n->color : BLACK; };
-  const bool both_black = color(replacement) == BLACK && to_delete->color == BLACK;
-
-  if (both_black) {
-    fixDoubleBlack(to_delete);
-  }
-  else {
-    auto sibling = getSibling(to_delete);
-    if (sibling && !replacement)
-      sibling->color = RED;
-    else if (replacement)
-      replacement->color = BLACK;
-  }
-
-  // delete to_delete from the tree
-  Node* parent = to_delete->parent;
-  if (isLeftChild(to_delete)) {
-    parent->left = replacement;
-  }
-  else if (isRightChild(to_delete)) {
-    parent->right = replacement;
-  }
-  if (replacement)
-    replacement->parent = parent;
-
-  // Update root if necessary.
-  if (to_delete == root_) {
-    root_ = replacement;
-  }
-
+  details::removeNoDoubleChild(to_delete, root_);
   allocator_.destroy(to_delete);
-
-  //  assert(checkConsistency());
-}
-
-template <class Key, class Value, std::size_t chunk_size>
-void RandomAccessMap<Key, Value, chunk_size>::fixRedRed(Node* x) {
-  // if x is root color it black and return
-  if (x == root_) {
-    x->color = BLACK;
-    return;
-  }
-
-  // initialize relatives.
-  Node* parent = x->parent;
-  Node* grandparent = parent->parent;
-  Node* uncle = getUncle(x);
-
-  if (parent->color != BLACK) {
-    if (uncle && uncle->color == RED) {
-      // uncle is red, perform recoloring and recurse
-      parent->color = BLACK;
-      uncle->color = BLACK;
-      grandparent->color = RED;
-      fixRedRed(grandparent);
-    }
-    else {
-      if (isLeftChild(parent)) {
-        if (isLeftChild(x)) {
-          // for left right
-          std::swap(parent->color, grandparent->color);
-        }
-        else {
-          leftRotate(parent);
-          std::swap(x->color, grandparent->color);
-        }
-        // for left left and left right
-        rightRotate(grandparent);
-      }
-      else {
-        if (isLeftChild(x)) {
-          // for right left
-          rightRotate(parent);
-          std::swap(x->color, grandparent->color);
-        }
-        else {
-          std::swap(parent->color, grandparent->color);
-        }
-
-        // for right right and right left
-        leftRotate(grandparent);
-      }
-    }
-  }
 }
 
 template <class Key, class Value, std::size_t chunk_size>
@@ -491,134 +374,6 @@ bool RandomAccessMap<Key, Value, chunk_size>::contains(const Key& key) const noe
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-void RandomAccessMap<Key, Value, chunk_size>::fixDoubleBlack(Node* x) {
-  if (x == root_) {  // Reached root
-    return;
-  }
-
-  Node* sibling = getSibling(x);
-  Node* parent = x->parent;
-
-  auto has_red_child = [](Node* n) {
-    return (n->left != NULL && n->left->color == RED) || (n->right != NULL && n->right->color == RED);
-  };
-
-  if (sibling == NULL) {
-    // No sibiling, double black pushed up
-    fixDoubleBlack(parent);
-  }
-  else {
-    if (sibling->color == RED) {
-      // Sibling red
-      parent->color = RED;
-      sibling->color = BLACK;
-      if (isLeftChild(sibling)) {
-        // left case
-        rightRotate(parent);
-      }
-      else {
-        // right case
-        leftRotate(parent);
-      }
-      fixDoubleBlack(x);
-    }
-    else {
-      // Sibling black
-      if (has_red_child(sibling)) {
-        // at least 1 red children
-        if (sibling->left != NULL and sibling->left->color == RED) {
-          if (isLeftChild(sibling)) {
-            // left left
-            sibling->left->color = sibling->color;
-            sibling->color = parent->color;
-            rightRotate(parent);
-          }
-          else {
-            // right left
-            sibling->left->color = parent->color;
-            rightRotate(sibling);
-            leftRotate(parent);
-          }
-        }
-        else {
-          if (isLeftChild(sibling)) {
-            // left right
-            sibling->right->color = parent->color;
-            leftRotate(sibling);
-            rightRotate(parent);
-          }
-          else {
-            // right right
-            sibling->right->color = sibling->color;
-            sibling->color = parent->color;
-            leftRotate(parent);
-          }
-        }
-        parent->color = BLACK;
-      }
-      else {
-        // 2 black children
-        sibling->color = RED;
-        if (parent->color == BLACK)
-          fixDoubleBlack(parent);
-        else
-          parent->color = BLACK;
-      }
-    }
-  }
-}
-
-template <class Key, class Value, std::size_t chunk_size>
-void RandomAccessMap<Key, Value, chunk_size>::rightRotate(Node* const node) {
-  // new parent will be node's left child
-  Node* new_parent = node->left;
-
-  // update root if current node is root
-  if (node == root_)
-    root_ = new_parent;
-
-  moveDown(node, new_parent);
-
-  // connect node with new parent's right element
-  node->left = new_parent->right;
-  // connect new parent's right element with node
-  // if it is not nullptr
-  if (new_parent->right != nullptr)
-    new_parent->right->parent = node;
-
-  // connect new parent with node
-  new_parent->right = node;
-
-  updateSubtreeSize(node);
-  updateSubtreeSize(new_parent);
-}
-
-template <class Key, class Value, std::size_t chunk_size>
-void RandomAccessMap<Key, Value, chunk_size>::leftRotate(Node* node) {
-  // new parent will be node's right child
-  Node* new_parent = node->right;
-
-  // update root_ if current node is root_
-  if (node == root_)
-    root_ = new_parent;
-
-  moveDown(node, new_parent);
-
-  // connect node with new parent's left element
-  node->right = new_parent->left;
-  // connect new parent's left element with node
-  // if it is not nullptr
-  if (new_parent->left != nullptr)
-    new_parent->left->parent = node;
-
-  // connect new parent with node
-  new_parent->left = node;
-
-  updateSubtreeSize(node);
-  updateSubtreeSize(new_parent);
-}
-
-template <class Key, class Value, std::size_t chunk_size>
 std::vector<std::pair<Key, Value>> RandomAccessMap<Key, Value, chunk_size>::linearize() const
     noexcept {
   std::vector<std::pair<Key, Value>> result;
@@ -678,49 +433,6 @@ bool RandomAccessMap<Key, Value, chunk_size>::checkConsistency() const noexcept 
 
   return !black_count_violation && !red_red_violation && !child_parent_violation &&
          !subtree_size_violation;
-}
-
-template <class Key, class Value, std::size_t chunk_size>
-auto RandomAccessMap<Key, Value, chunk_size>::getUncle(const Node* node) const -> Node* {
-  const Node* parent = node->parent;
-  if (isLeftChild(parent))
-    return parent->parent->right;
-  else if (isRightChild(parent))
-    return parent->parent->left;
-  else
-    return nullptr;
-}
-
-template <class Key, class Value, std::size_t chunk_size>
-auto RandomAccessMap<Key, Value, chunk_size>::getSibling(const Node* node) const -> Node* {
-  if (isLeftChild(node))
-    return node->parent->right;
-  else if (isRightChild(node))
-    return node->parent->left;
-  else
-    return nullptr;
-}
-
-template <class Key, class Value, std::size_t chunk_size>
-void RandomAccessMap<Key, Value, chunk_size>::moveDown(Node* node, Node* new_parent) {
-  auto& parent = node->parent;
-  if (isLeftChild(node)) {
-    parent->left = new_parent;
-  }
-  else if (isRightChild(node)) {
-    parent->right = new_parent;
-  }
-  new_parent->parent = parent;
-  parent = new_parent;
-}
-
-template <class Key, class Value, std::size_t chunk_size>
-void RandomAccessMap<Key, Value, chunk_size>::updateSubtreeSize(Node* node) {
-  node->subtree_size = 1;
-  if (node->left)
-    node->subtree_size += node->left->subtree_size;
-  if (node->right)
-    node->subtree_size += node->right->subtree_size;
 }
 
 template <class Key, class Value, std::size_t chunk_size>

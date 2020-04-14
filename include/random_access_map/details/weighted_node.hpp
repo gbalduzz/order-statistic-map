@@ -23,6 +23,8 @@ struct WeightedNode {
   WeightedNode(const Key& k, const Value& v, const Weight w, WeightedNode* p)
       : parent(p), weight(w), subtree_weight(w), data(k, v) {}
 
+  void updateSubtreeWeight();
+
   WeightedNode* left = nullptr;
   WeightedNode* right = nullptr;
   WeightedNode* parent = nullptr;
@@ -34,6 +36,15 @@ struct WeightedNode {
 
   Color color = RED;
 };
+
+template <class Key, class Value, class Weight>
+void WeightedNode<Key, Value, Weight>::updateSubtreeWeight() {
+  subtree_weight = weight;
+  if (left)
+    subtree_weight += left->subtree_weight;
+  if (right)
+    subtree_weight += right->subtree_weight;
+}
 
 }  // namespace details
 }  // namespace ramlib

@@ -21,6 +21,8 @@ struct Node {
 
   Node(const Key& k, const Value& v, Node* p) : parent(p), data(k, v) {}
 
+  void updateSubtreeWeight();
+
   Node* left = nullptr;
   Node* right = nullptr;
   Node* parent = nullptr;
@@ -31,6 +33,15 @@ struct Node {
 
   Color color = RED;
 };
+
+template <class Key, class Value>
+void Node<Key, Value>::updateSubtreeWeight() {
+  subtree_size = 1;
+  if (left)
+    subtree_size += left->subtree_size;
+  if (right)
+    subtree_size += right->subtree_size;
+}
 
 }  // namespace details
 }  // namespace ramlib
