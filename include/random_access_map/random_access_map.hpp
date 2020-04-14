@@ -94,6 +94,7 @@ public:
 
   // For testing purposes.
   bool checkConsistency() const noexcept;
+  bool checkSize() const noexcept;
 
 private:
   constexpr static auto BLACK = details::BLACK;
@@ -227,14 +228,13 @@ bool RandomAccessMap<Key, Value, chunk_size>::erase(const Key& key) noexcept {
   bool found = false;
 
   while (true) {
+    --to_delete->subtree_size;
+
     if (key == get_key(to_delete)) {
       found = true;
       break;
     }
-
-    --to_delete->subtree_size;
-
-    if (key < get_key(to_delete)) {
+    else if (key < get_key(to_delete)) {
       if (!to_delete->left)
         break;
       to_delete = to_delete->left;
@@ -257,18 +257,17 @@ bool RandomAccessMap<Key, Value, chunk_size>::erase(const Key& key) noexcept {
   }
 
   if (to_delete->left != nullptr && to_delete->right != nullptr) {  // to_delete has two children.
-    Node* const original = to_delete;
-    --to_delete->subtree_size;
+    Node* original = to_delete;
     to_delete = to_delete->right;
+    --to_delete->subtree_size;
     while (to_delete->left) {
-      --to_delete->subtree_size;
       to_delete = to_delete->left;
+      --to_delete->subtree_size;
     }
 
-    original->data = std::move(to_delete->data);
+    swap(original, to_delete, root_);
+    to_delete = original;
   }
-
-  --to_delete->subtree_size;
 
   details::removeNoDoubleChild(to_delete, root_);
   allocator_.destroy(to_delete);
@@ -287,7 +286,8 @@ void RandomAccessMap<Key, Value, chunk_size>::erase(iterator it) {
       to_delete = to_delete->left;
     }
 
-    original->data = std::move(to_delete->data);
+    swap(original, to_delete, root_);
+    to_delete = original;
   }
 
   // Update subtree counts.

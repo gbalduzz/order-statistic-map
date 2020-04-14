@@ -22,6 +22,9 @@ struct Node {
   Node(const Key& k, const Value& v, Node* p) : parent(p), data(k, v) {}
 
   void updateSubtreeWeight();
+  void swapMetadata(Node& rhs) {
+    std::swap(subtree_size, rhs.subtree_size);
+  }
 
   Node* left = nullptr;
   Node* right = nullptr;
