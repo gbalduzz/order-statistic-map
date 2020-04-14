@@ -1,4 +1,4 @@
-// Copyright (C) 2020 ETH Zurich
+// Copyright (C) 2020 Giovanni Balduzzi
 // All rights reserved.
 //
 // See LICENSE for terms of usage.
