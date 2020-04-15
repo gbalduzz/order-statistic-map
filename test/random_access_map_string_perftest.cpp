@@ -16,8 +16,10 @@
 
 #include <benchmark/benchmark.h>
 
-const unsigned n_init = 10000;
+const unsigned n_init = 50000;
 const unsigned n_test = 10;
+
+#define ARGS RangeMultiplier(4)->Range(64, 8 << 12)
 
 using Key = std::string;
 using Value = std::string;
@@ -62,12 +64,17 @@ static void performInsertRemoveTest(benchmark::State& state) {
 static void BM_StdMapInsertErase(benchmark::State& state) {
   performInsertRemoveTest<std::map, true>(state);
 }
-BENCHMARK(BM_StdMapInsertErase)->Arg(100)->Arg(1000)->Arg(n_init);
+BENCHMARK(BM_StdMapInsertErase)->ARGS;
+
+static void BM_StdUnorderedMapInsertErase(benchmark::State& state) {
+  performInsertRemoveTest<std::unordered_map, true>(state);
+}
+BENCHMARK(BM_StdUnorderedMapInsertErase)->ARGS;
 
 static void BM_MyMapInsertErase(benchmark::State& state) {
   performInsertRemoveTest<ramlib::RandomAccessMap, false>(state);
 }
-BENCHMARK(BM_MyMapInsertErase)->Arg(100)->Arg(1000)->Arg(n_init);
+BENCHMARK(BM_MyMapInsertErase)->ARGS;
 
 template <template <class, class> class Map>
 static void performFindTest(benchmark::State& state) {
@@ -85,9 +92,14 @@ static void performFindTest(benchmark::State& state) {
 static void BM_StdMapFind(benchmark::State& state) {
   performFindTest<std::map>(state);
 }
-BENCHMARK(BM_StdMapFind)->Arg(100)->Arg(1000)->Arg(n_init);
+BENCHMARK(BM_StdMapFind)->ARGS;
+
+static void BM_StdUnorderedMapFind(benchmark::State& state) {
+  performFindTest<std::unordered_map>(state);
+}
+BENCHMARK(BM_StdUnorderedMapFind)->ARGS;
 
 static void BM_MyMapFind(benchmark::State& state) {
   performFindTest<ramlib::RandomAccessMap>(state);
 }
-BENCHMARK(BM_MyMapFind)->Arg(100)->Arg(1000)->Arg(n_init);
+BENCHMARK(BM_MyMapFind)->ARGS;
