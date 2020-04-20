@@ -1,4 +1,5 @@
-// Copyright (C) 2020 Giovanni Balduzzi
+// Copyright (C) ETH Zurich
+// Copyright (C) 2020 UT-Battelle, LLC
 // All rights reserved.
 //
 // See LICENSE for terms of usage.
@@ -179,9 +180,8 @@ auto RandomAccessMap<Key, Value, chunk_size>::insert(const Key& key, const Value
   }
 
   Node* node = root_;
-  bool done = false;
 
-  while (!done) {
+  while (true) {
     const int comp = details::compare(key, get_key(node));
 
     if (comp == 0) {  // Key is already present. Undo changes and return.
@@ -200,15 +200,15 @@ auto RandomAccessMap<Key, Value, chunk_size>::insert(const Key& key, const Value
 
     if (comp < 0) {
       if (node->left == nullptr) {
-        node->left = allocator_.create(key, val, node);
-        done = true;
+        node = node->left = allocator_.create(key, val, node);
+        break;
       }
       node = node->left;
     }
     else {
       if (node->right == nullptr) {
-        node->right = allocator_.create(key, val, node);
-        done = true;
+        node = node->right = allocator_.create(key, val, node);
+        break;
       }
       node = node->right;
     }

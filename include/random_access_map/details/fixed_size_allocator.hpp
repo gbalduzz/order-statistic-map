@@ -1,4 +1,5 @@
-// Copyright (C) 2020 Giovanni Balduzzi
+// Copyright (C) ETH Zurich
+// Copyright (C) 2020 UT-Battelle, LLC
 // All rights reserved.
 //
 // See LICENSE for terms of usage.
