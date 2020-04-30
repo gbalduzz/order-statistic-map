@@ -16,11 +16,18 @@ namespace ramlib {
 
 template <class Node, bool is_const>
 class MapIterator {
+  template <class A, class B>
+  using Conditional = std::conditional_t<is_const, A, B>;
+
 public:
   using Key = typename Node::Key;
   using Value = typename Node::Value;
-  template <class A, class B>
-  using Conditional = std::conditional_t<is_const, A, B>;
+
+  using iteator_category = std::bidirectional_iterator_tag;
+  using value_type = std::pair<const Key, Value>;
+  using pointer = Conditional<const value_type*, value_type>;
+  using reference = Conditional<const value_type&, value_type&>;
+  using difference_type = std::size_t;
 
   MapIterator(Conditional<const Node*, Node*> node) : node_(node) {}
 
@@ -76,8 +83,6 @@ public:
   // Grant access of the node to the container.
   template <class K, class V, std::size_t s>
   friend class RandomAccessMap;
-  template <class K, class V, class W, std::size_t s>
-  friend class SamplingMap;
   // Grant access to the const or non-const version.
   template <class N, bool c>
   friend class MapIterator;

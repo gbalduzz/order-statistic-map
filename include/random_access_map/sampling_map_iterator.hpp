@@ -21,9 +21,9 @@ class SamplingMapIterator final : public MapIterator<Node, is_const> {
 public:
   using Base = MapIterator<Node, is_const>;
   using Weight = typename Node::Weight;
-  using Base::node_;
 
-  SamplingMapIterator(std::conditional_t<is_const, const Node*, Node*> node = nullptr) : Base(node) {}
+  SamplingMapIterator(std::conditional_t<is_const, const Node*, Node*> node = nullptr)
+      : Base(node) {}
 
   template <bool other_c>
   SamplingMapIterator(const SamplingMapIterator<Node, other_c>& rhs) : Base(rhs) {}
@@ -48,6 +48,12 @@ public:
       }
     }
   }
+
+  template <class K, class V, class W, std::size_t s>
+  friend class SamplingMap;
+
+private:
+  using Base::node_;
 };
 
 }  // namespace ramlib
