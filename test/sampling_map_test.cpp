@@ -37,12 +37,18 @@ TEST(RandomAccessMapTest, SamplingInt) {
   EXPECT_EQ(6, map_int.totalWeight());
   distro = std::uniform_int_distribution<unsigned>(0, 5);
 
+  const auto total_weight = map_int.totalWeight();
   for (int i = 0; i < 20; ++i) {
     const unsigned scaled = distro(rng1);
     const auto expected_idx = scaled < 3 ? 0 : scaled < 5 ? 1 : 2;
 
     EXPECT_EQ(map_int.sample(rng2)->first, expected_idx);
+    EXPECT_EQ(map_int.sample(scaled)->first, expected_idx);
+    EXPECT_EQ(map_int.sampleScaled(double(scaled) / total_weight)->first, expected_idx);
   }
+
+  // Out of range
+  EXPECT_FALSE(map_int.sample(total_weight));
 }
 
 TEST(RandomAccessMapTest, SamplingFloat) {
@@ -54,12 +60,19 @@ TEST(RandomAccessMapTest, SamplingFloat) {
 
   std::uniform_real_distribution<float> distro(0, 3.5);
 
+  const auto total_weight = map_float.totalWeight();
   for (int i = 0; i < 20; ++i) {
     const auto scaled = distro(rng1);
     const auto expected = scaled < 1.5 ? "a" : "c";
 
     EXPECT_EQ(map_float.sample(rng2)->first, expected);
+    EXPECT_EQ(map_float.sample(scaled)->first, expected);
+    EXPECT_EQ(map_float.sampleScaled(scaled / total_weight)->first, expected);
   }
+
+  // At the edge of the boundary.
+  EXPECT_TRUE(map_float.sample(total_weight));
+  EXPECT_FALSE(map_float.sample(total_weight * (1. + 5 * std::numeric_limits<float>::epsilon())));
 
   // Test empty map.
   ramlib::SamplingMap<int, std::string, double> empty;

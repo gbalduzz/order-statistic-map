@@ -89,6 +89,22 @@ public:
   template <class Rng>
   auto sample(Rng& rng) noexcept -> iterator;
 
+  // Sample the node that satisfies: weight(left subtree) <= `position` <
+  //                                 weight(left subtree) + weight(node)
+  // If the chosen position is outside [0, totalWeight()] returns the null iterator.
+  // If the weight is a floating point number, a weight of totalWeight() will result in the last
+  // entry, otherwise it results in the null iterator.
+  auto sample(Weight position) const noexcept -> const_iterator;
+  auto sample(Weight position) noexcept -> iterator;
+
+  // Sample from a value scaled in [0, 1].
+  auto sampleScaled(double position) const noexcept -> const_iterator {
+    return sample(position * totalWeight());
+  }
+  auto sampleScaled(double position) noexcept -> iterator {
+    return sample(position * totalWeight());
+  }
+
   // Returns an array of ordered keys and value pairs.
   std::vector<std::tuple<Key, Value, Weight>> linearize() const noexcept;
 
@@ -314,9 +330,6 @@ template <class Key, class Value, class Weight, std::size_t chunk_size>
 template <class Rng>
 auto SamplingMap<Key, Value, Weight, chunk_size>::sample(Rng& rng) noexcept -> iterator {
   const Weight total_weight = totalWeight();
-  if (!total_weight)
-    return iterator(nullptr);
-
   Weight scaled;
 
   if constexpr (std::is_floating_point_v<Weight>) {
@@ -326,6 +339,23 @@ auto SamplingMap<Key, Value, Weight, chunk_size>::sample(Rng& rng) noexcept -> i
   else {  // is integer
     static_assert(std::is_integral_v<Weight>, "Weight needs to be floating or integer.");
     scaled = std::uniform_int_distribution<Weight>(0, total_weight - 1)(rng);
+  }
+
+  return sample(scaled);
+}
+
+template <class Key, class Value, class Weight, std::size_t chunk_size>
+template <class Rng>
+auto SamplingMap<Key, Value, Weight, chunk_size>::sample(Rng& rng) const noexcept -> const_iterator {
+  return const_cast<SamplingMap&>(*this).sample(rng);
+}
+
+template <class Key, class Value, class Weight, std::size_t chunk_size>
+auto SamplingMap<Key, Value, Weight, chunk_size>::sample(const Weight position) noexcept -> iterator {
+  const auto total = totalWeight();
+  if (!total || position < 0 || position > total ||
+      (std::is_integral_v<Weight> && position == total)) {  // Out of range.
+    return iterator(nullptr);
   }
 
   Weight on_the_left(0);
@@ -338,10 +368,10 @@ auto SamplingMap<Key, Value, Weight, chunk_size>::sample(Rng& rng) noexcept -> i
     if (node->left)
       new_on_the_left += node->left->subtree_weight;
 
-    if (scaled >= new_on_the_left && scaled < new_on_the_left + node->weight) {
+    if (position >= new_on_the_left && position < new_on_the_left + node->weight) {
       return iterator(node);
     }
-    else if (scaled < new_on_the_left) {  // go left
+    else if (position < new_on_the_left) {  // go left
       node = node->left;
     }
     else {  // go right
@@ -358,9 +388,9 @@ auto SamplingMap<Key, Value, Weight, chunk_size>::sample(Rng& rng) noexcept -> i
 }
 
 template <class Key, class Value, class Weight, std::size_t chunk_size>
-template <class Rng>
-auto SamplingMap<Key, Value, Weight, chunk_size>::sample(Rng& rng) const noexcept -> const_iterator {
-  return const_cast<SamplingMap&>(*this).sample(rng);
+auto SamplingMap<Key, Value, Weight, chunk_size>::sample(const Weight position) const noexcept
+    -> const_iterator {
+  return const_cast<SamplingMap&>(*this).sample(position);
 }
 
 template <class Key, class Value, class Weight, std::size_t chunk_size>
@@ -394,8 +424,8 @@ bool SamplingMap<Key, Value, Weight, chunk_size>::contains(const Key& key) const
 }
 
 template <class Key, class Value, class Weight, std::size_t chunk_size>
-std::vector<std::tuple<Key, Value, Weight>> SamplingMap<Key, Value, Weight, chunk_size>::linearize() const
-    noexcept {
+std::vector<std::tuple<Key, Value, Weight>> SamplingMap<Key, Value, Weight, chunk_size>::linearize()
+    const noexcept {
   std::vector<std::tuple<Key, Value, Weight>> result;
   result.reserve(size());
 
