@@ -19,7 +19,16 @@ namespace maplib {
 // Precondition: elements of type Key have full order.
 template <class Key, std::size_t chunk_size = 64>
 class OrderStatisticSet {
+private:
+  struct Null {
+    Null() = default;
+  };
+
 public:
+  using Node = details::Node<Key, Null>;
+  using const_iterator = MapIterator<Node, true>;
+  using iterator = MapIterator<Node, false>;
+
   OrderStatisticSet() = default;
   OrderStatisticSet(const std::initializer_list<Key>& list);
   OrderStatisticSet(const std::vector<Key>& linearized);
@@ -28,6 +37,20 @@ public:
   OrderStatisticSet(OrderStatisticSet&& rhs) = default;
   OrderStatisticSet& operator=(const OrderStatisticSet& rhs) = default;
   OrderStatisticSet& operator=(OrderStatisticSet&& rhs) = default;
+
+  auto begin() const noexcept {
+    return map_.begin();
+  };
+  auto end() const noexcept {
+    return map_.end();
+  };
+
+  auto begin() noexcept {
+    return map_.begin();
+  };
+  auto end() noexcept {
+    return map_.end();
+  };
 
   // Insert new key. Returns false if the key is already present.
   bool insert(const Key& key) noexcept;
@@ -59,11 +82,7 @@ public:
   }
 
 private:
-  struct Null {
-    Null() = default;
-  };
 
-  using Node = typename OrderStatisticMap<Key, Null, chunk_size>::Node;
   OrderStatisticMap<Key, Null, chunk_size> map_;
 };
 

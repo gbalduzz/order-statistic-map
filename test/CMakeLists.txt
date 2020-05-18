@@ -7,6 +7,7 @@ endfunction()
 maplib_add_test(order_statistic_map_test)
 maplib_add_test(order_statistic_set_test)
 maplib_add_test(sampling_map_test)
+maplib_add_test(sampling_set_test)
 
 option(BUILD_PERFORMANCE_TEST "Build performance test. Requires google benchmark library." OFF)
 
