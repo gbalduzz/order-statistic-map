@@ -28,6 +28,9 @@
 
 namespace maplib {
 
+template <class Key, std::size_t chunk_size>
+class OrderStatisticSet;
+
 // Precondition: elements of type Key have full order.
 template <class Key, class Value, std::size_t chunk_size = 64>
 class OrderStatisticMap {
@@ -97,6 +100,8 @@ public:
   // For testing purposes.
   bool checkConsistency() const noexcept;
   bool checkSize() const noexcept;
+
+  friend class OrderStatisticSet<Key, chunk_size>;
 
 private:
   constexpr static auto BLACK = details::BLACK;
@@ -394,13 +399,22 @@ bool OrderStatisticMap<Key, Value, chunk_size>::contains(const Key& key) const n
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-std::vector<std::pair<Key, Value>> OrderStatisticMap<Key, Value, chunk_size>::linearize() const
-    noexcept {
+std::vector<std::pair<Key, Value>> OrderStatisticMap<Key, Value, chunk_size>::linearize() const noexcept {
   std::vector<std::pair<Key, Value>> result;
   result.reserve(size());
 
-  for (const auto& it : (*this))
-    result.emplace_back(it);
+  std::function<void(const Node*)> inorder = [&](const Node* node) {
+    if (node->left)
+      inorder(node->left);
+
+    result.push_back(node->data);
+
+    if (node->right)
+      inorder(node->right);
+  };
+
+  if (root_)
+    inorder(root_);
 
   return result;
 }

@@ -63,6 +63,7 @@ private:
     Null() = default;
   };
 
+  using Node = typename OrderStatisticMap<Key, Null, chunk_size>::Node;
   OrderStatisticMap<Key, Null, chunk_size> map_;
 };
 
@@ -105,8 +106,19 @@ std::vector<Key> OrderStatisticSet<Key, chunk_size>::linearize() const noexcept 
   std::vector<Key> result;
   result.reserve(size());
 
-  for (auto it : map_)
-    result.push_back(it.first);
+  std::function<void(const Node*)> inorder = [&](const Node* node) {
+    if (node->left)
+      inorder(node->left);
+
+    result.push_back(node->data.first);
+
+    if (node->right)
+      inorder(node->right);
+  };
+
+  if (map_.root_)
+    inorder(map_.root_);
+
   return result;
 }
 
