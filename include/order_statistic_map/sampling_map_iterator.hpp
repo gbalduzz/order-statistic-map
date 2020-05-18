@@ -14,7 +14,7 @@
 
 #include "map_iterator.hpp"
 
-namespace ramlib {
+namespace maplib {
 
 template <class Node, bool is_const>
 class SamplingMapIterator final : public MapIterator<Node, is_const> {
@@ -56,4 +56,4 @@ private:
   using Base::node_;
 };
 
-}  // namespace ramlib
+}  // namespace maplib

@@ -12,7 +12,7 @@
 
 #include "color.hpp"
 
-namespace ramlib {
+namespace maplib {
 namespace details {
 
 template <class _Key, class _Value>
@@ -48,4 +48,4 @@ void Node<Key, Value>::updateSubtreeWeight() {
 }
 
 }  // namespace details
-}  // namespace ramlib
+}  // namespace maplib

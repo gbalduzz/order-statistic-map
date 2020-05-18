@@ -12,7 +12,7 @@
 
 #include <string>
 
-namespace ramlib {
+namespace maplib {
 namespace details {
 
 template <class T>
@@ -31,4 +31,4 @@ int compare(const std::string& a, const std::string& b) noexcept {
 }
 
 }  // namespace details
-}  // namespace ramlib
+}  // namespace maplib

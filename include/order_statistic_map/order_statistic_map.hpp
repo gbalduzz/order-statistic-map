@@ -26,27 +26,27 @@
 #include "details/node.hpp"
 #include "details/node_operations.hpp"
 
-namespace ramlib {
+namespace maplib {
 
 // Precondition: elements of type Key have full order.
 template <class Key, class Value, std::size_t chunk_size = 64>
-class RandomAccessMap {
+class OrderStatisticMap {
 public:
   using Node = details::Node<Key, Value>;
   using const_iterator = MapIterator<Node, true>;
   using iterator = MapIterator<Node, false>;
 
-  RandomAccessMap() = default;
-  RandomAccessMap(const std::initializer_list<std::pair<Key, Value>>& list);
-  RandomAccessMap(const std::vector<std::pair<Key, Value>>& linearized);
+  OrderStatisticMap() = default;
+  OrderStatisticMap(const std::initializer_list<std::pair<Key, Value>>& list);
+  OrderStatisticMap(const std::vector<std::pair<Key, Value>>& linearized);
 
-  RandomAccessMap(const RandomAccessMap& rhs);
-  RandomAccessMap(RandomAccessMap&& rhs);
+  OrderStatisticMap(const OrderStatisticMap& rhs);
+  OrderStatisticMap(OrderStatisticMap&& rhs);
 
-  RandomAccessMap& operator=(const RandomAccessMap& rhs);
-  RandomAccessMap& operator=(RandomAccessMap&& rhs);
+  OrderStatisticMap& operator=(const OrderStatisticMap& rhs);
+  OrderStatisticMap& operator=(OrderStatisticMap&& rhs);
 
-  ~RandomAccessMap();
+  ~OrderStatisticMap();
 
   auto begin() const noexcept -> const_iterator;
   auto end() const noexcept -> const_iterator;
@@ -108,21 +108,21 @@ private:
 };
 
 template <class Key, class Value, std::size_t chunk_size>
-RandomAccessMap<Key, Value, chunk_size>::RandomAccessMap(
+OrderStatisticMap<Key, Value, chunk_size>::OrderStatisticMap(
     const std::initializer_list<std::pair<Key, Value>>& list) {
   for (const auto& [key, val] : list)
     insert(key, val);
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-RandomAccessMap<Key, Value, chunk_size>::RandomAccessMap(
+OrderStatisticMap<Key, Value, chunk_size>::OrderStatisticMap(
     const std::vector<std::pair<Key, Value>>& linearized) {
   for (const auto& p : linearized)
     insert(p);
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-RandomAccessMap<Key, Value, chunk_size>::~RandomAccessMap() {
+OrderStatisticMap<Key, Value, chunk_size>::~OrderStatisticMap() {
   std::stack<Node*> to_delete;
   if (root_)
     to_delete.push(root_);
@@ -141,20 +141,20 @@ RandomAccessMap<Key, Value, chunk_size>::~RandomAccessMap() {
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-RandomAccessMap<Key, Value, chunk_size>::RandomAccessMap(const RandomAccessMap& rhs) {
+OrderStatisticMap<Key, Value, chunk_size>::OrderStatisticMap(const OrderStatisticMap& rhs) {
   (*this) = rhs;
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-RandomAccessMap<Key, Value, chunk_size>::RandomAccessMap(RandomAccessMap&& rhs) {
+OrderStatisticMap<Key, Value, chunk_size>::OrderStatisticMap(OrderStatisticMap&& rhs) {
   (*this) = std::move(rhs);
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-RandomAccessMap<Key, Value, chunk_size>& RandomAccessMap<Key, Value, chunk_size>::operator=(
-    const RandomAccessMap<Key, Value, chunk_size>& rhs) {
+OrderStatisticMap<Key, Value, chunk_size>& OrderStatisticMap<Key, Value, chunk_size>::operator=(
+    const OrderStatisticMap<Key, Value, chunk_size>& rhs) {
   if (this != &rhs) {
-    *this = std::move(RandomAccessMap());  // clear content.
+    *this = std::move(OrderStatisticMap());  // clear content.
 
     for (const auto& it : rhs)
       insert(it);
@@ -163,15 +163,15 @@ RandomAccessMap<Key, Value, chunk_size>& RandomAccessMap<Key, Value, chunk_size>
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-RandomAccessMap<Key, Value, chunk_size>& RandomAccessMap<Key, Value, chunk_size>::operator=(
-    RandomAccessMap<Key, Value, chunk_size>&& rhs) {
+OrderStatisticMap<Key, Value, chunk_size>& OrderStatisticMap<Key, Value, chunk_size>::operator=(
+    OrderStatisticMap<Key, Value, chunk_size>&& rhs) {
   std::swap(root_, rhs.root_);
   std::swap(allocator_, rhs.allocator_);
   return *this;
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-auto RandomAccessMap<Key, Value, chunk_size>::insert(const Key& key, const Value& val) noexcept
+auto OrderStatisticMap<Key, Value, chunk_size>::insert(const Key& key, const Value& val) noexcept
     -> std::pair<iterator, bool> {
   if (!root_) {
     root_ = allocator_.create(key, val, nullptr);
@@ -222,7 +222,7 @@ auto RandomAccessMap<Key, Value, chunk_size>::insert(const Key& key, const Value
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-bool RandomAccessMap<Key, Value, chunk_size>::erase(const Key& key) noexcept {
+bool OrderStatisticMap<Key, Value, chunk_size>::erase(const Key& key) noexcept {
   if (!root_)
     return false;
   Node* to_delete = root_;
@@ -280,7 +280,7 @@ bool RandomAccessMap<Key, Value, chunk_size>::erase(const Key& key) noexcept {
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-void RandomAccessMap<Key, Value, chunk_size>::erase(iterator it) {
+void OrderStatisticMap<Key, Value, chunk_size>::erase(iterator it) {
   Node* to_delete = it.node_;
 
   if (to_delete->left != nullptr && to_delete->right != nullptr) {  // to_delete has two children.
@@ -306,7 +306,7 @@ void RandomAccessMap<Key, Value, chunk_size>::erase(iterator it) {
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-auto RandomAccessMap<Key, Value, chunk_size>::findByIndex(const std::size_t index) -> iterator {
+auto OrderStatisticMap<Key, Value, chunk_size>::findByIndex(const std::size_t index) -> iterator {
   if (index >= size())
     throw(std::out_of_range("Index out of range"));
 
@@ -334,13 +334,13 @@ auto RandomAccessMap<Key, Value, chunk_size>::findByIndex(const std::size_t inde
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-auto RandomAccessMap<Key, Value, chunk_size>::findByIndex(const std::size_t index) const
+auto OrderStatisticMap<Key, Value, chunk_size>::findByIndex(const std::size_t index) const
     -> const_iterator {
-  return const_cast<RandomAccessMap&>(*this).findByIndex(index);
+  return const_cast<OrderStatisticMap&>(*this).findByIndex(index);
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-auto RandomAccessMap<Key, Value, chunk_size>::findByKey(const Key& key) noexcept -> iterator {
+auto OrderStatisticMap<Key, Value, chunk_size>::findByKey(const Key& key) noexcept -> iterator {
   Node* node = root_;
   while (node) {
     const int comp = details::compare(key, get_key(node));
@@ -357,14 +357,14 @@ auto RandomAccessMap<Key, Value, chunk_size>::findByKey(const Key& key) noexcept
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-auto RandomAccessMap<Key, Value, chunk_size>::findByKey(const Key& key) const noexcept
+auto OrderStatisticMap<Key, Value, chunk_size>::findByKey(const Key& key) const noexcept
     -> const_iterator {
   // Avoid code duplication with a cast to non-const (const iterator does not allow data modification).
-  return const_iterator(const_cast<RandomAccessMap&>(*this).findByKey(key));
+  return const_iterator(const_cast<OrderStatisticMap&>(*this).findByKey(key));
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-bool RandomAccessMap<Key, Value, chunk_size>::contains(const Key& key) const noexcept {
+bool OrderStatisticMap<Key, Value, chunk_size>::contains(const Key& key) const noexcept {
   const Node* node = root_;
 
   if constexpr (std::is_same_v<Key, std::string>) {
@@ -394,7 +394,7 @@ bool RandomAccessMap<Key, Value, chunk_size>::contains(const Key& key) const noe
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-std::vector<std::pair<Key, Value>> RandomAccessMap<Key, Value, chunk_size>::linearize() const
+std::vector<std::pair<Key, Value>> OrderStatisticMap<Key, Value, chunk_size>::linearize() const
     noexcept {
   std::vector<std::pair<Key, Value>> result;
   result.reserve(size());
@@ -406,7 +406,7 @@ std::vector<std::pair<Key, Value>> RandomAccessMap<Key, Value, chunk_size>::line
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-bool RandomAccessMap<Key, Value, chunk_size>::checkConsistency() const noexcept {
+bool OrderStatisticMap<Key, Value, chunk_size>::checkConsistency() const noexcept {
   bool child_parent_violation = false;
   bool red_red_violation = false;
   bool black_count_violation = false;
@@ -456,7 +456,7 @@ bool RandomAccessMap<Key, Value, chunk_size>::checkConsistency() const noexcept 
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-auto RandomAccessMap<Key, Value, chunk_size>::begin() noexcept -> iterator {
+auto OrderStatisticMap<Key, Value, chunk_size>::begin() noexcept -> iterator {
   if (!root_)
     return iterator{nullptr};
 
@@ -468,18 +468,18 @@ auto RandomAccessMap<Key, Value, chunk_size>::begin() noexcept -> iterator {
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-auto RandomAccessMap<Key, Value, chunk_size>::end() noexcept -> iterator {
+auto OrderStatisticMap<Key, Value, chunk_size>::end() noexcept -> iterator {
   return iterator{nullptr};
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-auto RandomAccessMap<Key, Value, chunk_size>::begin() const noexcept -> const_iterator {
-  return const_cast<RandomAccessMap&>(*this).begin();
+auto OrderStatisticMap<Key, Value, chunk_size>::begin() const noexcept -> const_iterator {
+  return const_cast<OrderStatisticMap&>(*this).begin();
 }
 
 template <class Key, class Value, std::size_t chunk_size>
-auto RandomAccessMap<Key, Value, chunk_size>::end() const noexcept -> const_iterator {
+auto OrderStatisticMap<Key, Value, chunk_size>::end() const noexcept -> const_iterator {
   return iterator{nullptr};
 }
 
-}  // namespace ramlib
+}  // namespace maplib

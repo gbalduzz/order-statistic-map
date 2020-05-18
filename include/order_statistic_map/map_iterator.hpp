@@ -12,7 +12,7 @@
 
 #include <functional>
 
-namespace ramlib {
+namespace maplib {
 
 template <class Node, bool is_const>
 class MapIterator {
@@ -82,7 +82,7 @@ public:
 
   // Grant access of the node to the container.
   template <class K, class V, std::size_t s>
-  friend class RandomAccessMap;
+  friend class OrderStatisticMap;
   // Grant access to the const or non-const version.
   template <class N, bool c>
   friend class MapIterator;
@@ -131,4 +131,4 @@ void MapIterator<Node, is_const>::prev() {
   }
 }
 
-}  // namespace ramlib
+}  // namespace maplib

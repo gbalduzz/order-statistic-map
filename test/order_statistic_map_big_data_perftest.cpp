@@ -6,9 +6,9 @@
 //
 // Author: Giovanni Balduzzi (gbalduzz@itp.phys.ethz.ch)
 //
-// RandomAccessMap performance test
+// OrderStatisticMap performance test
 
-#include "random_access_map/random_access_map.hpp"
+#include "order_statistic_map/order_statistic_map.hpp"
 
 #include <vector>
 #include <random>
@@ -17,13 +17,13 @@
 
 #include <benchmark/benchmark.h>
 
+#define ARGS RangeMultiplier(4)->Range(64, 8 << 12)
+
 const unsigned n_init = 50000;
 const unsigned n_test = 10;
 
-#define ARGS RangeMultiplier(4)->Range(64, 8 << 12)
-
-using Key = std::string;
-using Value = std::string;
+using Key = std::size_t;
+using Value = std::array<int, 64>;
 
 std::vector<Key> keys;
 std::vector<Value> vals;
@@ -35,8 +35,9 @@ void init() {
   initialized = true;
 
   for (int i = 0; i < n_init + n_test; ++i) {
-    keys.push_back("key " + std::to_string(i));
-    vals.push_back("value " + std::to_string(i));
+    keys.push_back(i);
+    vals.emplace_back();
+    vals.back().fill(i);
   }
 
   std::random_shuffle(keys.begin(), keys.end());
@@ -73,34 +74,34 @@ static void BM_StdUnorderedMapInsertErase(benchmark::State& state) {
 BENCHMARK(BM_StdUnorderedMapInsertErase)->ARGS;
 
 static void BM_MyMapInsertErase(benchmark::State& state) {
-  performInsertRemoveTest<ramlib::RandomAccessMap, false>(state);
+  performInsertRemoveTest<maplib::OrderStatisticMap, false>(state);
 }
 BENCHMARK(BM_MyMapInsertErase)->ARGS;
 
 template <template <class, class> class Map>
 static void performFindTest(benchmark::State& state) {
-  init();
-  Map<Key, Value> map;
-  for (int i = 0; i < state.range(0); ++i)
-    map.insert({keys[i], vals[i]});
+    init();
+    Map<Key, Value> map;
+    for (int i = 0; i < state.range(0); ++i)
+        map.insert({keys[i], vals[i]});
 
-  for (auto _ : state) {
-    for (int i = 0; i < n_test; ++i)
-      benchmark::DoNotOptimize(map.count(keys[i]));
-  }
+    for (auto _ : state) {
+        for (int i = 0; i < n_test; ++i)
+            benchmark::DoNotOptimize(map.count(keys[i]));
+    }
 }
 
 static void BM_StdMapFind(benchmark::State& state) {
-  performFindTest<std::map>(state);
+    performFindTest<std::map>(state);
 }
 BENCHMARK(BM_StdMapFind)->ARGS;
 
 static void BM_StdUnorderedMapFind(benchmark::State& state) {
-  performFindTest<std::unordered_map>(state);
+    performFindTest<std::unordered_map>(state);
 }
 BENCHMARK(BM_StdUnorderedMapFind)->ARGS;
 
 static void BM_MyMapFind(benchmark::State& state) {
-  performFindTest<ramlib::RandomAccessMap>(state);
+    performFindTest<maplib::OrderStatisticMap>(state);
 }
 BENCHMARK(BM_MyMapFind)->ARGS;

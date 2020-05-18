@@ -6,9 +6,9 @@
 //
 // Author: Giovanni Balduzzi (gbalduzz@itp.phys.ethz.ch)
 //
-// Bidirectional iterator for the RandomAccessMap class
+// Test for the SamplingMap class.
 
-#include "random_access_map/sampling_map.hpp"
+#include "order_statistic_map/sampling_map.hpp"
 
 #include <map>
 #include <random>
@@ -16,8 +16,8 @@
 
 #include "gtest/gtest.h"
 
-TEST(RandomAccessMapTest, SamplingInt) {
-  ramlib::SamplingMap<int, int, unsigned> map_int{{0, 0, 1}, {1, 0, 2}, {2, 0, 1}};
+TEST(OrderStatisticMapTest, SamplingInt) {
+  maplib::SamplingMap<int, int, unsigned> map_int{{0, 0, 1}, {1, 0, 2}, {2, 0, 1}};
   EXPECT_EQ(4, map_int.totalWeight());
 
   std::ranlux24_base rng1(0);
@@ -51,8 +51,8 @@ TEST(RandomAccessMapTest, SamplingInt) {
   EXPECT_FALSE(map_int.sample(total_weight));
 }
 
-TEST(RandomAccessMapTest, SamplingFloat) {
-  ramlib::SamplingMap<std::string, int, float> map_float{{"a", 0, 1.5}, {"b", 0, 0}, {"c", 0, 2}};
+TEST(OrderStatisticMapTest, SamplingFloat) {
+  maplib::SamplingMap<std::string, int, float> map_float{{"a", 0, 1.5}, {"b", 0, 0}, {"c", 0, 2}};
   EXPECT_EQ(3.5, map_float.totalWeight());
 
   std::ranlux24_base rng1(0);
@@ -75,14 +75,14 @@ TEST(RandomAccessMapTest, SamplingFloat) {
   EXPECT_FALSE(map_float.sample(total_weight * (1. + 5 * std::numeric_limits<float>::epsilon())));
 
   // Test empty map.
-  ramlib::SamplingMap<int, std::string, double> empty;
+  maplib::SamplingMap<int, std::string, double> empty;
   EXPECT_EQ(0, empty.totalWeight());
   EXPECT_FALSE(empty.sample(rng1));
 }
 
 //// Manually test insertion, erasure, and retrieval.
-TEST(RandomAccessMapTest, InsertFindErase) {
-  ramlib::SamplingMap<std::string, int, unsigned> map;
+TEST(OrderStatisticMapTest, InsertFindErase) {
+  maplib::SamplingMap<std::string, int, unsigned> map;
   // Map is empty
   EXPECT_FALSE(map.erase("foo"));
 
@@ -131,8 +131,8 @@ TEST(RandomAccessMapTest, InsertFindErase) {
 }
 
 // Perform the test with a number of randomly inserted and removed values.
-TEST(RandomAccessMapTest, InsertRemoveConsistancy) {
-  ramlib::SamplingMap<int, int, double> my_map;
+TEST(OrderStatisticMapTest, InsertRemoveConsistancy) {
+  maplib::SamplingMap<int, int, double> my_map;
   std::map<int, int> std_map;
 
   const int n_insertions = 100;
@@ -177,10 +177,10 @@ TEST(RandomAccessMapTest, InsertRemoveConsistancy) {
   }
 }
 
-TEST(RandomAccessMapTest, Assignment) {
-  ramlib::SamplingMap<int, double, int> map1{{1, 0.5, 1}, {-1, 3.14, 2}, {42, -273.15, 1}};
-  ramlib::SamplingMap<int, double, int> map2;
-  ramlib::SamplingMap<int, double, int> map3;
+TEST(OrderStatisticMapTest, Assignment) {
+  maplib::SamplingMap<int, double, int> map1{{1, 0.5, 1}, {-1, 3.14, 2}, {42, -273.15, 1}};
+  maplib::SamplingMap<int, double, int> map2;
+  maplib::SamplingMap<int, double, int> map3;
 
   map2 = map1;
   EXPECT_EQ(map1.linearize(), map2.linearize());

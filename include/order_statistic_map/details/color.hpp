@@ -8,10 +8,10 @@
 
 #pragma once
 
-namespace ramlib {
+namespace maplib {
 namespace details {
 
 enum Color : std::uint8_t { RED, BLACK };
 
 }  // namespace details
-}  // namespace ramlib
+}  // namespace maplib

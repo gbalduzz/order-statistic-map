@@ -27,7 +27,7 @@
 #include "details/node_operations.hpp"
 #include "details/weighted_node.hpp"
 
-namespace ramlib {
+namespace maplib {
 
 // Precondition: elements of type Key have full order.
 template <class Key, class Value, class Weight, std::size_t chunk_size = 64>
@@ -521,4 +521,4 @@ auto SamplingMap<Key, Value, Weight, chunk_size>::end() const noexcept -> const_
   return iterator{nullptr};
 }
 
-}  // namespace ramlib
+}  // namespace maplib

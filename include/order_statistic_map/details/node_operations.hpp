@@ -13,7 +13,7 @@
 
 #include "color.hpp"
 
-namespace ramlib {
+namespace maplib {
 namespace details {
 
 template <class Node>
@@ -334,4 +334,4 @@ void swap(Node* a, Node* b, Node*& root) {
 }
 
 }  // namespace details
-}  // namespace ramlib
+}  // namespace maplib

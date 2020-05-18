@@ -6,9 +6,9 @@
 //
 // Author: Giovanni Balduzzi (gbalduzz@itp.phys.ethz.ch)
 //
-// RandomAccessMap performance test
+// OrderStatisticMap performance test
 
-#include "random_access_map/sampling_map.hpp"
+#include "order_statistic_map/sampling_map.hpp"
 
 #include <vector>
 #include <random>
@@ -44,7 +44,7 @@ void init() {
 
 static void BM_SamplingMapInsertErase(benchmark::State& state) {
   init();
-  ramlib::SamplingMap<Key, Value, float> map;
+  maplib::SamplingMap<Key, Value, float> map;
   for (int i = 0; i < state.range(0); ++i)
     map.insert(keys[i], vals[i], weights[i]);
 
@@ -59,11 +59,11 @@ BENCHMARK(BM_SamplingMapInsertErase)->Arg(100)->Arg(1000)->Arg(n_init);
 
 static void BM_SamplingMapSample(benchmark::State& state) {
   init();
-  ramlib::SamplingMap<Key, Value, float> map;
+  maplib::SamplingMap<Key, Value, float> map;
   for (int i = 0; i < state.range(0); ++i)
     map.insert(keys[i], vals[i], weights[i]);
 
-  std::vector<ramlib::SamplingMap<Key, Value, float>::iterator> findings(n_test);
+  std::vector<maplib::SamplingMap<Key, Value, float>::iterator> findings(n_test);
   std::ranlux24_base rng(0);
 
   for (auto _ : state) {

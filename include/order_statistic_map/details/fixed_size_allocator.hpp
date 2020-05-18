@@ -17,7 +17,7 @@
 #include <variant>
 #include <vector>
 
-namespace ramlib {
+namespace maplib {
 namespace details {
 
 template <class T, std::size_t objects_per_pool = 64>
@@ -110,4 +110,4 @@ void FixedSizeAllocator<T, objects_per_pool>::allocatePool() {
 }
 
 }  // namespace details
-}  // namespace ramlib
+}  // namespace maplib

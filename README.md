@@ -1,35 +1,34 @@
-# Random Access Map Library
-This header only library provides efficient implementations of an ordered map or set data structure, 
-with additional features aimed toward, but not limited to, Monte Carlo sampling. 
+# Order Statistic Map Library
+This header only library provides efficient implementations of an order statistic map or set data 
+structure, designed for, but not limited to, Monte Carlo sampling. 
 
 Insertion, removal, and access to the i-th ordered element are all O(log n) operations.
 
 An additional container `SamplingMap` allows to sample with a random number generator in O(log n)
-a value stored in the map, with an automatically normalized user defined discrete pdf.  
+a value stored in the map, with a probability proportional to an user defined weight.  
 
 # Installation
 The library is headers only, just copy the content of the `include` folder somewhere in your include
 search path.
 
-
 ## Documentation
-TBA
+TBA. Public methods are documented in the source.
 
-`RandomAccessMap` and `SamplingMap` functionalities and interfaces are a superset of `std::map`, 
+`OrderStatisticMap` and `SamplingMap` functionalities and interfaces are a superset of `std::map`, 
 with the exception of `operator[]` being replaced by `insert` and `findByKey`, due to the need to 
 distinguish the access method from `findByIndex`.
 
-
 ## Performance
-The `RandomAccessMap` container consistently outperforms the standard library `std::map` for different types and sizes of
-inputs, despite the need to perform a small number of extra operations to keep the indexing up to data.
-The difference is larger in a cold cache scenario.
+The `OrderStatisticMap` container consistently outperforms the standard library `std::map` for 
+different types and sizes of inputs, despite the need to perform a small number of extra operations 
+to keep the indexing up to data. The difference is larger in a warm cache scenario, where a small
+list of elements is frequently inserted, removed, or searched.
 
 When erasure is performed, pointers rather than values are moved around, keeping other iterators
 valid. This also allows to efficiently insert and erase key-value pairs with a large stack size,
 while paying a negligible price for pairs smaller than the pointers stored in a node.
 
-`RandomAccessMap::insert` (`RandomAccessMap::erase`) is optimized for the case of an insertion of
+`OrderStatisticMap::insert` (`OrderStatisticMap::erase`) is optimized for the case of an insertion of
 a not yet present (already present) key.
 
 The following benchmarks were run using the [Google benchmark](https://github.com/google/benchmark)

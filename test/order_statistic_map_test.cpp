@@ -6,9 +6,9 @@
 //
 // Author: Giovanni Balduzzi (gbalduzz@itp.phys.ethz.ch)
 //
-// Bidirectional iterator for the RandomAccessMap class
+// Bidirectional iterator for the OrderStatisticMap class
 
-#include "random_access_map/random_access_map.hpp"
+#include "order_statistic_map/order_statistic_map.hpp"
 
 #include <map>
 #include <random>
@@ -17,8 +17,8 @@
 #include "gtest/gtest.h"
 
 // Manually test insertion, erasure, and retrieval.
-TEST(RandomAccessMapTest, InsertFindErase) {
-  ramlib::RandomAccessMap<std::string, int> map;
+TEST(OrderStatisticMapTest, InsertFindErase) {
+  maplib::OrderStatisticMap<std::string, int> map;
   // Map is empty
   EXPECT_FALSE(map.erase("foo"));
 
@@ -70,8 +70,8 @@ TEST(RandomAccessMapTest, InsertFindErase) {
 }
 
 // Perform the test with a number of randomly inserted and removed values.
-TEST(RandomAccessMapTest, LinearizeAndRandomAccess) {
-  ramlib::RandomAccessMap<int, int> my_map;
+TEST(OrderStatisticMapTest, LinearizeAndRandomAccess) {
+  maplib::OrderStatisticMap<int, int> my_map;
   std::map<int, int> std_map;
 
   const int n_insertions = 100;
@@ -122,10 +122,10 @@ TEST(RandomAccessMapTest, LinearizeAndRandomAccess) {
   }
 }
 
-TEST(RandomAccessMapTest, Assignment) {
-  ramlib::RandomAccessMap<int, double> map1{{1, 0.5}, {-1, 3.14}, {42, -273.15}};
-  ramlib::RandomAccessMap<int, double> map2;
-  ramlib::RandomAccessMap<int, double> map3;
+TEST(OrderStatisticMapTest, Assignment) {
+  maplib::OrderStatisticMap<int, double> map1{{1, 0.5}, {-1, 3.14}, {42, -273.15}};
+  maplib::OrderStatisticMap<int, double> map2;
+  maplib::OrderStatisticMap<int, double> map3;
 
   map2 = map1;
   EXPECT_EQ(map1.linearize(), map2.linearize());
@@ -133,12 +133,12 @@ TEST(RandomAccessMapTest, Assignment) {
   map3 = std::move(map1);
   EXPECT_EQ(map2.linearize(), map3.linearize());
 
-  ramlib::RandomAccessMap<int, double> map4(map3.linearize());
+  maplib::OrderStatisticMap<int, double> map4(map3.linearize());
   EXPECT_EQ(map4.linearize(), map3.linearize());
 }
 
-TEST(RandomAccessMapTest, IteratorValidity) {
-  ramlib::RandomAccessMap<int, int> map{{1, 1}, {0, 0}, {3, 3}, {2, 2}, {4, 4}};
+TEST(OrderStatisticMapTest, IteratorValidity) {
+  maplib::OrderStatisticMap<int, int> map{{1, 1}, {0, 0}, {3, 3}, {2, 2}, {4, 4}};
 
   auto it = map.findByKey(4);
 

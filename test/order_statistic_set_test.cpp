@@ -6,9 +6,9 @@
 //
 // Author: Giovanni Balduzzi (gbalduzz@itp.phys.ethz.ch)
 //
-// This file tests the RandomAccessSet class.
+// This file tests the OrderStatisticSet class.
 
-#include "random_access_map/random_access_set.hpp"
+#include "order_statistic_map/order_statistic_set.hpp"
 
 #include <set>
 #include <random>
@@ -17,8 +17,8 @@
 #include "gtest/gtest.h"
 
 // Manually test insertion, erasure, and retrieval.
-TEST(RandomAccessSetTest, InsertAccessErase) {
-  ramlib::RandomAccessSet<std::string> set;
+TEST(OrderStatisticSetTest, InsertAccessErase) {
+  maplib::OrderStatisticSet<std::string> set;
   // Set is empty
   EXPECT_FALSE(set.erase("foo"));
 
@@ -44,8 +44,8 @@ TEST(RandomAccessSetTest, InsertAccessErase) {
 }
 
 // Perform the test with a number of randomly inserted and removed values.
-TEST(RandomAccessSetTest, LinearizeAndRandomAccess) {
-  ramlib::RandomAccessSet<int> my_set;
+TEST(OrderStatisticSetTest, LinearizeAndRandomAccess) {
+  maplib::OrderStatisticSet<int> my_set;
   std::set<int> std_set;
 
   const int n_insertions = 49;
@@ -91,11 +91,11 @@ TEST(RandomAccessSetTest, LinearizeAndRandomAccess) {
   }
 }
 
-TEST(RandomAccessSetTest, Assignment) {
-  ramlib::RandomAccessSet<float> set1{0.5, 3.14, -273.15};
+TEST(OrderStatisticSetTest, Assignment) {
+  maplib::OrderStatisticSet<float> set1{0.5, 3.14, -273.15};
 
-  ramlib::RandomAccessSet<float> set2;
-  ramlib::RandomAccessSet<float> set3;
+  maplib::OrderStatisticSet<float> set2;
+  maplib::OrderStatisticSet<float> set3;
 
   set2 = set1;
   EXPECT_EQ(set1.linearize(), set2.linearize());
@@ -103,6 +103,6 @@ TEST(RandomAccessSetTest, Assignment) {
   set3 = std::move(set1);
   EXPECT_EQ(set2.linearize(), set3.linearize());
 
-  ramlib::RandomAccessSet<float> set4(set3.linearize());
+  maplib::OrderStatisticSet<float> set4(set3.linearize());
   EXPECT_EQ(set4.linearize(), set3.linearize());
 }

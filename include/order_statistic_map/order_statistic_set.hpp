@@ -12,22 +12,22 @@
 
 #pragma once
 
-#include "random_access_map.hpp"
+#include "order_statistic_map.hpp"
 
-namespace ramlib {
+namespace maplib {
 
 // Precondition: elements of type Key have full order.
 template <class Key, std::size_t chunk_size = 64>
-class RandomAccessSet {
+class OrderStatisticSet {
 public:
-  RandomAccessSet() = default;
-  RandomAccessSet(const std::initializer_list<Key>& list);
-  RandomAccessSet(const std::vector<Key>& linearized);
+  OrderStatisticSet() = default;
+  OrderStatisticSet(const std::initializer_list<Key>& list);
+  OrderStatisticSet(const std::vector<Key>& linearized);
 
-  RandomAccessSet(const RandomAccessSet& rhs) = default;
-  RandomAccessSet(RandomAccessSet&& rhs) = default;
-  RandomAccessSet& operator=(const RandomAccessSet& rhs) = default;
-  RandomAccessSet& operator=(RandomAccessSet&& rhs) = default;
+  OrderStatisticSet(const OrderStatisticSet& rhs) = default;
+  OrderStatisticSet(OrderStatisticSet&& rhs) = default;
+  OrderStatisticSet& operator=(const OrderStatisticSet& rhs) = default;
+  OrderStatisticSet& operator=(OrderStatisticSet&& rhs) = default;
 
   // Insert new key. Returns false if the key is already present.
   bool insert(const Key& key) noexcept;
@@ -63,45 +63,45 @@ private:
     Null() = default;
   };
 
-  RandomAccessMap<Key, Null, chunk_size> map_;
+  OrderStatisticMap<Key, Null, chunk_size> map_;
 };
 
 template <class Key, std::size_t chunk_size>
-RandomAccessSet<Key, chunk_size>::RandomAccessSet(const std::initializer_list<Key>& list) {
+OrderStatisticSet<Key, chunk_size>::OrderStatisticSet(const std::initializer_list<Key>& list) {
   for (const auto& k : list)
     map_.insert(k, {});
 }
 
 template <class Key, std::size_t chunk_size>
-RandomAccessSet<Key, chunk_size>::RandomAccessSet(const std::vector<Key>& linearized) {
+OrderStatisticSet<Key, chunk_size>::OrderStatisticSet(const std::vector<Key>& linearized) {
   for (const auto& k : linearized)
     map_.insert(k, {});
 }
 
 template <class Key, std::size_t chunk_size>
-bool RandomAccessSet<Key, chunk_size>::insert(const Key& key) noexcept {
+bool OrderStatisticSet<Key, chunk_size>::insert(const Key& key) noexcept {
   return map_.insert(key, {}).second;
 }
 
 template <class Key, std::size_t chunk_size>
-bool RandomAccessSet<Key, chunk_size>::erase(const Key& key) noexcept {
+bool OrderStatisticSet<Key, chunk_size>::erase(const Key& key) noexcept {
   return map_.erase(key);
 }
 
 template <class Key, std::size_t chunk_size>
-bool RandomAccessSet<Key, chunk_size>::contains(const Key& key) const noexcept {
+bool OrderStatisticSet<Key, chunk_size>::contains(const Key& key) const noexcept {
   return map_.contains(key);
 }
 
 template <class Key, std::size_t chunk_size>
-const Key& RandomAccessSet<Key, chunk_size>::findByIndex(const std::size_t index) const {
+const Key& OrderStatisticSet<Key, chunk_size>::findByIndex(const std::size_t index) const {
   auto it = map_.findByIndex(index);
   assert(it);
   return it->first;
 }
 
 template <class Key, std::size_t chunk_size>
-std::vector<Key> RandomAccessSet<Key, chunk_size>::linearize() const noexcept {
+std::vector<Key> OrderStatisticSet<Key, chunk_size>::linearize() const noexcept {
   std::vector<Key> result;
   result.reserve(size());
 
@@ -110,4 +110,4 @@ std::vector<Key> RandomAccessSet<Key, chunk_size>::linearize() const noexcept {
   return result;
 }
 
-}  // namespace ramlib
+}  // namespace maplib
