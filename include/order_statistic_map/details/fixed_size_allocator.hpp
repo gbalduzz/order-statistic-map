@@ -14,7 +14,6 @@
 #pragma once
 
 #include <memory>
-#include <variant>
 #include <vector>
 
 namespace maplib {
@@ -42,17 +41,9 @@ private:
   void deallocate(T* ptr) noexcept;
   void allocatePool();
 
-  class TNode {
-  public:
-    TNode*& next() {
-      return std::get<0>(data_);
-    }
-    T* data() {
-      return reinterpret_cast<T*>(&data_);
-    }
-
-  private:
-    std::variant<TNode*, char[sizeof(T)]> data_;
+  union TNode {
+    char data[sizeof(T)];
+    TNode* next;
   };
 
   using Pool = std::array<TNode, objects_per_pool>;
@@ -82,15 +73,15 @@ T* FixedSizeAllocator<T, objects_per_pool>::allocate() {
     allocatePool();
   }
   TNode* result = free_;  // allocate the topmost element.
-  free_ = free_->next();  // and pop it from the stack of free chunks
-  return result->data();
+  free_ = free_->next;  // and pop it from the stack of free chunks
+  return reinterpret_cast<T*>(&result->data);
 }
 
 template <class T, std::size_t objects_per_pool>
 void FixedSizeAllocator<T, objects_per_pool>::deallocate(T* ptr) noexcept {
   TNode* node = reinterpret_cast<TNode*>(ptr);
   // add to the stack of chunks
-  node->next() = free_;
+  node->next = free_;
   free_ = node;
 }
 
@@ -102,9 +93,9 @@ void FixedSizeAllocator<T, objects_per_pool>::allocatePool() {
   // Form a stack from this pool.
   auto& new_pool = *pools_.back();
   for (int i = 0; i < objects_per_pool - 1; ++i) {
-    new_pool[i].next() = &new_pool[i + 1];
+    new_pool[i].next = &new_pool[i + 1];
   }
-  new_pool.back().next() = nullptr;
+  new_pool.back().next = nullptr;
 
   free_ = new_pool.data();
 }
