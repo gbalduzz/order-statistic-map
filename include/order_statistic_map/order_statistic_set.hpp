@@ -53,7 +53,7 @@ public:
   };
 
   // Insert new key. Returns false if the key is already present.
-  bool insert(const Key& key) noexcept;
+  auto insert(const Key& key) noexcept -> std::pair<iterator, bool>;
 
   // Remove the node relative to key. Returns true if the key was present.
   // Returns false and leave the container unchanged otherwise.
@@ -82,7 +82,6 @@ public:
   }
 
 private:
-
   OrderStatisticMap<Key, Null, chunk_size> map_;
 };
 
@@ -99,8 +98,9 @@ OrderStatisticSet<Key, chunk_size>::OrderStatisticSet(const std::vector<Key>& li
 }
 
 template <class Key, std::size_t chunk_size>
-bool OrderStatisticSet<Key, chunk_size>::insert(const Key& key) noexcept {
-  return map_.insert(key, {}).second;
+auto OrderStatisticSet<Key, chunk_size>::insert(const Key& key) noexcept
+    -> std::pair<iterator, bool> {
+  return map_.insert(key, {});
 }
 
 template <class Key, std::size_t chunk_size>

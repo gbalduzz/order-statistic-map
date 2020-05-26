@@ -22,9 +22,9 @@ TEST(OrderStatisticSetTest, InsertAccessErase) {
   // Set is empty
   EXPECT_FALSE(set.erase("foo"));
 
-  EXPECT_TRUE(set.insert("foo"));
-  EXPECT_TRUE(set.insert("bar"));
-  EXPECT_FALSE(set.insert("bar"));
+  EXPECT_TRUE(set.insert("foo").second);
+  EXPECT_TRUE(set.insert("bar").second);
+  EXPECT_FALSE(set.insert("bar").second);
   EXPECT_EQ(2, set.size());
 
   EXPECT_EQ("foo", set.findByIndex(1));  // foo > bar.
@@ -105,4 +105,24 @@ TEST(OrderStatisticSetTest, Assignment) {
 
   maplib::OrderStatisticSet<float> set4(set3.linearize());
   EXPECT_EQ(set4.linearize(), set3.linearize());
+}
+
+TEST(OrderStatisticMapTest, IteratorIndex) {
+  maplib::OrderStatisticSet<int> set{-1, 0, 1, 2, 5, 6};
+
+  {
+    auto [it, inserted] = set.insert(3);
+    EXPECT_TRUE(inserted);
+    EXPECT_EQ(4, it.position());
+  }
+  {
+    auto [it, inserted] = set.insert(-1);
+    EXPECT_FALSE(inserted);
+    EXPECT_EQ(0, it.position());
+  }
+  {
+    auto [it, inserted] = set.insert(8);
+    EXPECT_TRUE(inserted);
+    EXPECT_EQ(7, it.position());
+  }
 }

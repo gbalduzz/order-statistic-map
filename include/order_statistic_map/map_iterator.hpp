@@ -59,6 +59,9 @@ public:
 
   void prev();
 
+  // returns the index of the relative node, or how many lower keys are stored in the tree.
+  std::size_t position() const;
+
   MapIterator& operator++() {
     next();
     return *this;
@@ -129,6 +132,31 @@ void MapIterator<Node, is_const>::prev() {
       node_ = node_->parent;
     node_ = node_->parent;
   }
+}
+
+template <class Node, bool is_const>
+std::size_t MapIterator<Node, is_const>::position() const {
+  if (!node_)
+    throw(std::logic_error("Null iterator has no index."));
+
+  const Node* node = node_;
+  std::size_t index = 0;
+
+  if (node->left)
+    index += node->left->subtree_size;
+
+  const Node* parent;
+
+  while (parent = node->parent) {
+    // If the node is a right child, add the parent's left subtree size to the index
+    if (parent->right == node) {
+      index += parent->subtree_size - node->subtree_size;
+    }
+
+    node = parent;
+  }
+
+  return index;
 }
 
 }  // namespace maplib
