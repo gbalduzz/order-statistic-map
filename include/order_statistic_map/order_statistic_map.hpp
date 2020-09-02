@@ -109,7 +109,7 @@ private:
 
   // Members
   Node* root_ = nullptr;
-  details::FixedSizeAllocator<Node, chunk_size> allocator_;
+  FixedSizeAllocator<Node, chunk_size> allocator_;
 };
 
 template <class Key, class Value, std::size_t chunk_size>

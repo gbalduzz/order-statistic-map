@@ -17,11 +17,19 @@
 #include <vector>
 
 namespace maplib {
-namespace details {
 
 template <class T, std::size_t objects_per_pool = 64>
 class FixedSizeAllocator {
 public:
+  using value_type = T;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using is_always_equal = std::false_type;
+  template <class U>
+  struct rebind {
+    using other = FixedSizeAllocator<U, objects_per_pool>;
+  };
+
   FixedSizeAllocator() = default;
   FixedSizeAllocator(const FixedSizeAllocator&) = delete;
   FixedSizeAllocator& operator=(const FixedSizeAllocator&) = delete;
@@ -36,9 +44,10 @@ public:
   // Calls the destructor and deallocate ptr.
   void destroy(T* ptr) noexcept;
 
+  [[nodiscard]] T* allocate(std::size_t n = 1);
+  void deallocate(T* ptr, std::size_t n = 1) noexcept;
+
 private:
-  [[nodiscard]] T* allocate();
-  void deallocate(T* ptr) noexcept;
   void allocatePool();
 
   union TNode {
@@ -68,17 +77,23 @@ void FixedSizeAllocator<T, objects_per_pool>::destroy(T* ptr) noexcept {
 }
 
 template <class T, std::size_t objects_per_pool>
-T* FixedSizeAllocator<T, objects_per_pool>::allocate() {
+T* FixedSizeAllocator<T, objects_per_pool>::allocate(std::size_t n) {
+  assert(n == 1);
+
   if (!free_) {
     allocatePool();
   }
   TNode* result = free_;  // allocate the topmost element.
-  free_ = free_->next;  // and pop it from the stack of free chunks
+  free_ = free_->next;    // and pop it from the stack of free chunks
   return reinterpret_cast<T*>(&result->data);
 }
 
 template <class T, std::size_t objects_per_pool>
-void FixedSizeAllocator<T, objects_per_pool>::deallocate(T* ptr) noexcept {
+void FixedSizeAllocator<T, objects_per_pool>::deallocate(T* ptr, std::size_t n) noexcept {
+  assert(n == 1);
+  if(!ptr)
+      return;
+
   TNode* node = reinterpret_cast<TNode*>(ptr);
   // add to the stack of chunks
   node->next = free_;
@@ -100,5 +115,4 @@ void FixedSizeAllocator<T, objects_per_pool>::allocatePool() {
   free_ = new_pool.data();
 }
 
-}  // namespace details
 }  // namespace maplib
