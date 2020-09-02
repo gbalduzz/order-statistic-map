@@ -18,8 +18,14 @@ if(BUILD_PERFORMANCE_TEST)
         # add_test(NAME ${name} COMMAND ${name})
     endfunction()
 
-maplib_add_perftest(order_statistic_map_small_data_perftest)
-maplib_add_perftest(order_statistic_map_big_data_perftest)
-maplib_add_perftest(order_statistic_map_string_perftest)
-maplib_add_perftest(sampling_map_perftest)
+    maplib_add_perftest(order_statistic_map_small_data_perftest)
+    maplib_add_perftest(order_statistic_map_big_data_perftest)
+    maplib_add_perftest(order_statistic_map_string_perftest)
+    maplib_add_perftest(sampling_map_perftest)
 endif()
+
+
+# Copy auxiliary files for plotting
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/plot.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/generate_all_plots.bash
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

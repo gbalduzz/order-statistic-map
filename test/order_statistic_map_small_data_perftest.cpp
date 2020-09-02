@@ -14,11 +14,10 @@
 #include <random>
 #include <string>
 #include <map>
-#include <unordered_map>
 
 #include <benchmark/benchmark.h>
 
-#define ARGS RangeMultiplier(4)->Range(64, 8<<12)
+#define ARGS RangeMultiplier(4)->Range(64, 8 << 12)
 
 const unsigned n_init = 50000;
 const unsigned n_test = 10;
@@ -28,6 +27,9 @@ using Value = int;
 
 std::vector<Key> keys;
 std::vector<Value> vals;
+
+template <class K, class V>
+using PooledMap = std::map<K, V, std::less<K>, maplib::FixedSizeAllocator<std::pair<const K, V>>>;
 
 void init() {
   static bool initialized = false;
@@ -64,10 +66,10 @@ static void BM_StdMapInsertErase(benchmark::State& state) {
 }
 BENCHMARK(BM_StdMapInsertErase)->ARGS;
 
-static void BM_StdUnorderedMapInsertErase(benchmark::State& state) {
-  performInsertRemoveTest<std::unordered_map>(state);
+static void BM_PooledStdMapInsertErase(benchmark::State& state) {
+  performInsertRemoveTest<PooledMap>(state);
 }
-BENCHMARK(BM_StdUnorderedMapInsertErase)->ARGS;
+BENCHMARK(BM_PooledStdMapInsertErase)->ARGS;
 
 static void BM_MyMapInsertErase(benchmark::State& state) {
   performInsertRemoveTest<maplib::OrderStatisticMap>(state);
@@ -92,10 +94,10 @@ static void BM_StdMapFind(benchmark::State& state) {
 }
 BENCHMARK(BM_StdMapFind)->ARGS;
 
-static void BM_StdUnorderedMapFind(benchmark::State& state) {
-  performFindTest<std::unordered_map>(state);
+static void BM_PooledStdMapFind(benchmark::State& state) {
+  performFindTest<PooledMap>(state);
 }
-BENCHMARK(BM_StdUnorderedMapFind)->ARGS;
+BENCHMARK(BM_PooledStdMapFind)->ARGS;
 
 static void BM_MyMapFind(benchmark::State& state) {
   performFindTest<maplib::OrderStatisticMap>(state);

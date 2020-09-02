@@ -14,15 +14,19 @@ search path.
 ## Documentation
 TBA. Public methods are documented in the source.
 
-`OrderStatisticMap` and `SamplingMap` functionalities and interfaces are a superset of `std::map`, 
-with the exception of `operator[]` being replaced by `insert` and `findByKey`, due to the need to 
-distinguish the access method from `findByIndex`.
+`OrderStatisticMap` and `SamplingMap` functionalities and interfaces are identical to `std::map`, 
+with the exception of `find` being replaced by `findByKey` and `findByIndex`, and `operator[]` 
+being removed due to the ambiguity in the access method.
 
 ## Performance
 The `OrderStatisticMap` container consistently outperforms the standard library `std::map` for 
 different types and sizes of inputs, despite the need to perform a small number of extra operations 
 to keep the indexing up to data. The difference is larger in a warm cache scenario, where a small
 list of elements is frequently inserted, removed, or searched.
+
+This was tested against the standard library using the default allocator 
+(labelled `std::map` in the figures), and using the same pooled allocator as the OrderStatisticMap  
+(labelled `pooled std::map` in the figures). 
 
 When erasure is performed, pointers rather than values are moved around, keeping other iterators
 valid. This also allows to efficiently insert and erase key-value pairs with a large stack size,
@@ -32,8 +36,7 @@ while paying a negligible price for pairs smaller than the pointers stored in a 
 a not yet present (already present) key.
 
 The following benchmarks were run using the [Google benchmark](https://github.com/google/benchmark)
-library on an Intel(R) Core(TM) i7-8700K CPU. The performance is also compared to `std::unordered_map` 
-for reference, despite it being a different container with different properties.
+library on an Intel(R) Core(TM) i7-8700K CPU using GCC 9.3.0 with -O3 optimization.
 
 ### Cold cache 
 The insertion-erasure test is performed by adding and removing different keys at each iteration, keeping

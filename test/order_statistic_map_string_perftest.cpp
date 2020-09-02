@@ -28,6 +28,9 @@ using Value = std::string;
 std::vector<Key> keys;
 std::vector<Value> vals;
 
+template <class K, class V>
+using PooledMap = std::map<K, V, std::less<K>, maplib::FixedSizeAllocator<std::pair<const K, V>>>;
+
 void init() {
   static bool initialized = false;
   if (initialized)
@@ -43,64 +46,60 @@ void init() {
   std::random_shuffle(vals.begin(), vals.end());
 }
 
-template <template <class, class> class Map, bool pair = true>
+template <template <class, class> class Map>
 static void performInsertRemoveTest(benchmark::State& state) {
-  init();
-  Map<Key, Value> map;
-  for (int i = 0; i < state.range(0); ++i)
-    map.insert({keys[i], vals[i]});
-
-  for (auto _ : state) {
-    for (int i = n_init; i < n_init + n_test; ++i) {
-      if constexpr (pair)
+    init();
+    Map<Key, Value> map;
+    for (int i = 0; i < state.range(0); ++i)
         map.insert({keys[i], vals[i]});
-      else
-        map.insert(keys[i], vals[i]);
+
+    for (auto _ : state) {
+        for (int i = n_init; i < n_init + n_test; ++i)
+            map.insert({keys[i], vals[i]});
+        for (int i = n_init; i < n_init + n_test; ++i)
+            map.erase(keys[i]);
     }
-    for (int i = n_init; i < n_init + n_test; ++i)
-      map.erase(keys[i]);
-  }
 }
 
 static void BM_StdMapInsertErase(benchmark::State& state) {
-  performInsertRemoveTest<std::map, true>(state);
+    performInsertRemoveTest<std::map>(state);
 }
 BENCHMARK(BM_StdMapInsertErase)->ARGS;
 
-static void BM_StdUnorderedMapInsertErase(benchmark::State& state) {
-  performInsertRemoveTest<std::unordered_map, true>(state);
+static void BM_PooledStdMapInsertErase(benchmark::State& state) {
+    performInsertRemoveTest<PooledMap>(state);
 }
-BENCHMARK(BM_StdUnorderedMapInsertErase)->ARGS;
+BENCHMARK(BM_PooledStdMapInsertErase)->ARGS;
 
 static void BM_MyMapInsertErase(benchmark::State& state) {
-  performInsertRemoveTest<maplib::OrderStatisticMap, false>(state);
+    performInsertRemoveTest<maplib::OrderStatisticMap>(state);
 }
 BENCHMARK(BM_MyMapInsertErase)->ARGS;
 
 template <template <class, class> class Map>
 static void performFindTest(benchmark::State& state) {
-  init();
-  Map<Key, Value> map;
-  for (int i = 0; i < state.range(0); ++i)
-    map.insert({keys[i], vals[i]});
+    init();
+    Map<Key, Value> map;
+    for (int i = 0; i < state.range(0); ++i)
+        map.insert({keys[i], vals[i]});
 
-  for (auto _ : state) {
-    for (int i = 0; i < n_test; ++i)
-      benchmark::DoNotOptimize(map.count(keys[i]));
-  }
+    for (auto _ : state) {
+        for (int i = 0; i < n_test; ++i)
+            benchmark::DoNotOptimize(map.count(keys[i]));
+    }
 }
 
 static void BM_StdMapFind(benchmark::State& state) {
-  performFindTest<std::map>(state);
+    performFindTest<std::map>(state);
 }
 BENCHMARK(BM_StdMapFind)->ARGS;
 
-static void BM_StdUnorderedMapFind(benchmark::State& state) {
-  performFindTest<std::unordered_map>(state);
+static void BM_PooledStdMapFind(benchmark::State& state) {
+    performFindTest<PooledMap>(state);
 }
-BENCHMARK(BM_StdUnorderedMapFind)->ARGS;
+BENCHMARK(BM_PooledStdMapFind)->ARGS;
 
 static void BM_MyMapFind(benchmark::State& state) {
-  performFindTest<maplib::OrderStatisticMap>(state);
+    performFindTest<maplib::OrderStatisticMap>(state);
 }
 BENCHMARK(BM_MyMapFind)->ARGS;

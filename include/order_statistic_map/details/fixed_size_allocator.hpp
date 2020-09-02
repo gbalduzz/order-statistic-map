@@ -91,8 +91,8 @@ T* FixedSizeAllocator<T, objects_per_pool>::allocate(std::size_t n) {
 template <class T, std::size_t objects_per_pool>
 void FixedSizeAllocator<T, objects_per_pool>::deallocate(T* ptr, std::size_t n) noexcept {
   assert(n == 1);
-  if(!ptr)
-      return;
+  if (!ptr)
+    return;
 
   TNode* node = reinterpret_cast<TNode*>(ptr);
   // add to the stack of chunks
