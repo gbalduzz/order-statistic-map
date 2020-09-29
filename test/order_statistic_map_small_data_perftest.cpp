@@ -19,8 +19,7 @@
 
 #define ARGS RangeMultiplier(4)->Range(64, 8 << 12)
 
-const unsigned n_init = 50000;
-const unsigned n_test = 10;
+const unsigned n_init = 100000;
 
 using Key = int;
 using Value = int;
@@ -37,7 +36,7 @@ void init() {
     return;
   initialized = true;
 
-  for (int i = 0; i < n_init + n_test; ++i) {
+  for (int i = 0; i < n_init; ++i) {
     keys.push_back(i);
     vals.push_back(i);
   }
@@ -46,33 +45,45 @@ void init() {
   std::random_shuffle(vals.begin(), vals.end());
 }
 
-template <template <class, class> class Map>
+template <template <class, class> class Map, bool pair>
 static void performInsertRemoveTest(benchmark::State& state) {
   init();
   Map<Key, Value> map;
   for (int i = 0; i < state.range(0); ++i)
     map.insert({keys[i], vals[i]});
 
+  unsigned idx_insert = state.range(0);
+  unsigned idx_erase = 0;
+
   for (auto _ : state) {
-    for (int i = n_init; i < n_init + n_test; ++i)
-      map.insert({keys[i], vals[i]});
-    for (int i = n_init; i < n_init + n_test; ++i)
-      map.erase(keys[i]);
+    if constexpr (pair)
+      map.insert({keys[idx_insert], vals[idx_insert]});
+    else
+      map.insert(keys[idx_insert], vals[idx_insert]);
+
+    map.erase(keys[idx_erase]);
+
+    ++idx_erase;
+    ++idx_insert;
+    if (idx_erase == keys.size())
+      idx_erase = 0;
+    if (idx_insert == keys.size())
+      idx_insert = 0;
   }
 }
 
 static void BM_StdMapInsertErase(benchmark::State& state) {
-  performInsertRemoveTest<std::map>(state);
+  performInsertRemoveTest<std::map, true>(state);
 }
 BENCHMARK(BM_StdMapInsertErase)->ARGS;
 
 static void BM_PooledStdMapInsertErase(benchmark::State& state) {
-  performInsertRemoveTest<PooledMap>(state);
+  performInsertRemoveTest<PooledMap, true>(state);
 }
 BENCHMARK(BM_PooledStdMapInsertErase)->ARGS;
 
 static void BM_MyMapInsertErase(benchmark::State& state) {
-  performInsertRemoveTest<maplib::OrderStatisticMap>(state);
+  performInsertRemoveTest<maplib::OrderStatisticMap, false>(state);
 }
 BENCHMARK(BM_MyMapInsertErase)->ARGS;
 
@@ -83,9 +94,13 @@ static void performFindTest(benchmark::State& state) {
   for (int i = 0; i < state.range(0); ++i)
     map.insert({keys[i], vals[i]});
 
+  unsigned idx = 0;
+
   for (auto _ : state) {
-    for (int i = 0; i < n_test; ++i)
-      benchmark::DoNotOptimize(map.count(keys[i]));
+    benchmark::DoNotOptimize(map.count(keys[idx]));
+    ++idx;
+    if (idx == keys.size())
+      idx = 0;
   }
 }
 
