@@ -19,10 +19,10 @@ template <class T>
 int compare(const T& a, const T& b) noexcept {
   if (a < b)
     return -1;
-  else if (a == b)
-    return 0;
-  else
+  else if (b < a)
     return 1;
+  else
+    return 0;
 }
 
 template <>
