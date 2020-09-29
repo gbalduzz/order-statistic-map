@@ -12,11 +12,16 @@ The library is headers only, just copy the content of the `include` folder somew
 search path.
 
 ## Documentation
-TBA. Public methods are documented in the source.
+Additional documentation of public methods, is provided in the source declaration. 
 
-`OrderStatisticMap` and `SamplingMap` functionalities and interfaces are identical to `std::map`, 
-with the exception of `find` being replaced by `findByKey` and `findByIndex`, and `operator[]` 
-being removed due to the ambiguity in the access method.
+[maplib::OrderStatisticMap](documentation/order_statistics_map.md)
+
+[maplib::OrderStatisticSet](documentation/order_statistics_set.md)
+
+[maplib::SamplingMap](documentation/sampling_map.md)
+
+[maplib::SamplingSet](documentation/sampling_map.md)
+
 
 ## Performance
 The `OrderStatisticMap` container consistently outperforms the standard library `std::map` for 

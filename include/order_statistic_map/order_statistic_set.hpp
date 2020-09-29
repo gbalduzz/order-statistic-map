@@ -67,7 +67,7 @@ public:
 
   // Returns the "index"-th lowest key.
   // Precondition: 0 <= index < size()
-  const Key& findByIndex(const std::size_t index) const;
+  const Key& findByIndex(const std::size_t index) const noexcept;
 
   // Number of keys stored in the map.
   std::size_t size() const noexcept {
@@ -114,7 +114,7 @@ bool OrderStatisticSet<Key, chunk_size>::contains(const Key& key) const noexcept
 }
 
 template <class Key, std::size_t chunk_size>
-const Key& OrderStatisticSet<Key, chunk_size>::findByIndex(const std::size_t index) const {
+const Key& OrderStatisticSet<Key, chunk_size>::findByIndex(const std::size_t index) const noexcept {
   auto it = map_.findByIndex(index);
   assert(it);
   return it->first;
